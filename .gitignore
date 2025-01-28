@@ -1,0 +1,18 @@
+# Build directories
+build/
+buildir/
+bin/
+
+# Compiled files
+*.o
+*.exe
+*.out
+*.dll
+*.so
+
+# IDE/Editor files
+.vscode/
+.idea/
+
+# Misc
+.cache/
