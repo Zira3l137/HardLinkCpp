@@ -1,6 +1,6 @@
-Remove-Item linkfiles.exe -ErrorAction Ignore
-Set-Location .\builddir
+Remove-Item hardlinkcpp.exe -ErrorAction Ignore
+Set-Location .\build
 meson compile
 
-Copy-Item -Path .\linkfiles.exe -Destination ..\linkfiles.exe
+Copy-Item -Path .\hardlinkcpp.exe -Destination ..\hardlinkcpp.exe
 Set-Location ..

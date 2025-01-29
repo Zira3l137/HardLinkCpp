@@ -1,1 +1,1 @@
-meson setup builddir --reconfigure
+meson setup build --reconfigure
