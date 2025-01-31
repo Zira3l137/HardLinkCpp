@@ -19,13 +19,15 @@ int main(int argc, char *argv[]) {
 
   auto input = cmdArgs.find("input");
   if (NOT(input == cmdArgs.end())) {
-    sourceDir = String(input->second);
+    Path absolutePath = fs::absolute(input->second);
+    sourceDir = absolutePath.string();
     printLn("Linking from: " + sourceDir);
   }
 
   auto output = cmdArgs.find("output");
   if (NOT(output == cmdArgs.end())) {
-    destinationDir = String(output->second);
+    Path absolutePath = fs::absolute(input->second);
+    destinationDir = absolutePath.string();
     printLn("To: " + destinationDir);
   }
 
