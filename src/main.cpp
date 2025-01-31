@@ -7,14 +7,14 @@ int main(int argc, char *argv[]) {
 
   if (cmdArgs.empty()) {
     printErr("No arguments provided");
-    return 0;
+    return 1;
   }
 
   auto help = cmdArgs.find("help");
   if (NOT(help == cmdArgs.end())) {
     printLn(
         "linkfiles -i(--input) INPUT_DIR -o(--output) OUTPUT_DIR [-h(--help)]");
-    return 0;
+    return 1;
   }
 
   auto input = cmdArgs.find("input");
@@ -29,8 +29,17 @@ int main(int argc, char *argv[]) {
     printLn("To: " + destinationDir);
   }
 
+  if (NOT fs::is_directory(destinationDir)) {
+    printErr("Destination directory does not exist or is not a directory");
+    return 1;
+  }
+
   if (NOT sourceDir.empty() AND NOT destinationDir.empty()) {
-    linkFiles(sourceDir, destinationDir);
+    if (NOT fs::is_directory(sourceDir)) {
+      createLink(sourceDir, destinationDir);
+    } else {
+      linkFiles(sourceDir, destinationDir);
+    }
   }
 
   return 0;
