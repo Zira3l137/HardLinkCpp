@@ -6,14 +6,19 @@ int main(int argc, char *argv[]) {
   auto cmdArgs = getCmdArgs(argc, argv);
 
   if (cmdArgs.empty()) {
-    printErr("No arguments provided");
+    std::cout << "No arguments provided\n";
     return 1;
+  }
+
+  auto debug = cmdArgs.find("debug");
+  if (NOT(debug == cmdArgs.end())) {
+    setDebugMode(true);
   }
 
   auto help = cmdArgs.find("help");
   if (NOT(help == cmdArgs.end())) {
-    printLn(
-        "linkfiles -i(--input) INPUT_DIR -o(--output) OUTPUT_DIR [-h(--help)]");
+    std::cout << ("linkfiles -i(--input) INPUT_DIR -o(--output) OUTPUT_DIR "
+                  "[-h(--help)]");
     return 1;
   }
 
@@ -26,13 +31,13 @@ int main(int argc, char *argv[]) {
 
   auto output = cmdArgs.find("output");
   if (NOT(output == cmdArgs.end())) {
-    Path absolutePath = fs::absolute(input->second);
+    Path absolutePath = fs::absolute(output->second);
     destinationDir = absolutePath.string();
-    printLn("To: " + destinationDir);
+    printLn("To: " + destinationDir + "\n");
   }
 
   if (NOT fs::is_directory(destinationDir)) {
-    printErr("Destination directory does not exist or is not a directory");
+    std::cout << ("Destination directory does not exist or is not a directory");
     return 1;
   }
 

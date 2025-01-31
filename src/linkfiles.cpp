@@ -45,6 +45,12 @@ bool createLink(const String &WHAT, const String &WHERE) {
   // Construct the link path
   Path linkPath = destinationPath / sourcePath.filename();
 
+  // Delete the existing file with the same name or back it up
+  if (fs::exists(linkPath)) {
+    printErr("File with the same name already exists - " + linkPath.string());
+    return false;
+  }
+
   // Check if the source is already linked at the destination
   int linkCheckResult = alreadyLinked(WHAT, WHERE);
   if (linkCheckResult == 0) {

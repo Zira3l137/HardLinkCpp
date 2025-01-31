@@ -12,6 +12,10 @@
 #define OR ||
 #define AND &&
 
+extern bool DEBUG_MODE;
+
+void setDebugMode(bool debugMode);
+
 namespace fs = std::filesystem;
 typedef fs::path Path;
 
