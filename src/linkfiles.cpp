@@ -23,7 +23,6 @@ int alreadyLinked(const String &WHAT, const String &WHERE) {
                  entry.path().string() + "\"");
         errorOccurred = true;
       }
-      // If result == 1, continue checking other files
     }
   } catch (const fs::filesystem_error &e) {
     printErr("Failed to access directory \"" + WHERE + "\": " + e.what());
@@ -34,7 +33,7 @@ int alreadyLinked(const String &WHAT, const String &WHERE) {
   return errorOccurred ? -1 : 1;
 }
 
-bool createLink(const String &WHAT, const String &WHERE) {
+bool createLink(const String &WHAT, const String &WHERE, bool exist_ok) {
   Path sourcePath(WHAT);
   Path destinationPath(WHERE);
 
@@ -54,11 +53,17 @@ bool createLink(const String &WHAT, const String &WHERE) {
   // Check if the source is already linked at the destination
   int linkCheckResult = alreadyLinked(WHAT, WHERE);
   if (linkCheckResult == 0) {
-    printErr("File is already linked - " + WHAT);
-    return false;
+    if (NOT exist_ok) {
+      printErr("File is already linked - " + WHAT);
+      return false;
+    } else {
+      return true;
+    }
   } else if (linkCheckResult == -1) {
-    printErr("Failed to check if file is already linked: " + WHAT);
-    return false;
+    if (NOT exist_ok) {
+      printErr("Failed to check if file is already linked: " + WHAT);
+      return false;
+    }
   }
 
   // Attempt to create the hard link
@@ -72,14 +77,14 @@ bool createLink(const String &WHAT, const String &WHERE) {
   return true;
 }
 
-void batchCreateLink(const String &FROM, const String &TO, int &LINKED) {
+void batchCreateLink(const String &FROM, const String &TO, int &LINKED, bool exist_ok) {
   Path destinationPath(TO);
   try {
     // Iterate over directory entries
     for (const auto &entry : fs::directory_iterator(FROM)) {
       if (NOT fs::is_directory(entry.path())) {
         // Create a link for a file entry
-        if (createLink(entry.path().string(), TO)) {
+        if (createLink(entry.path().string(), TO, exist_ok)) {
           // Increment the counter for a successfully created link
           sStream message;
           message << "Linked " << entry.path().filename() << " to " << TO
@@ -93,7 +98,7 @@ void batchCreateLink(const String &FROM, const String &TO, int &LINKED) {
         if (NOT fs::exists(newDestination)) {
           fs::create_directories(newDestination);
         }
-        batchCreateLink(entry.path().string(), newDestination.string(), LINKED);
+        batchCreateLink(entry.path().string(), newDestination.string(), LINKED, exist_ok);
       }
     }
   } catch (const fs::filesystem_error &e) {
@@ -102,9 +107,9 @@ void batchCreateLink(const String &FROM, const String &TO, int &LINKED) {
   }
 }
 
-int linkFiles(const String &FROM, const String &TO) {
+int linkFiles(const String &FROM, const String &TO, bool exist_ok) {
   int linkedCount = 0;
-  batchCreateLink(FROM, TO, linkedCount);
+  batchCreateLink(FROM, TO, linkedCount, exist_ok);
 
   sStream message;
   message << "\nSuccesfully created links for " << linkedCount << " files\n";
