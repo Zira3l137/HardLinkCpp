@@ -51,13 +51,13 @@ Once built, you can use the executable to create hard links from a source direct
 to a destination directory. The basic syntax is:
 
 ```bash
-HardLinkCpp <source_directory> <destination_directory>
+HardLinkCpp [-i || --input] <source_directory> [-o || --output] <destination_directory>
 ```
 
 Example:
 
 ```bash
-HardLinkCpp C:\path\to\source C:\path\to\destination
+HardLinkCpp -i C:\path\to\source -o C:\path\to\destination
 ```
 
 This command will recursively traverse `C:\path\to\source` and create hard links
