@@ -51,17 +51,24 @@ Once built, you can use the executable to create hard links from a source direct
 to a destination directory. The basic syntax is:
 
 ```bash
-HardLinkCpp <source_directory> <destination_directory>
+HardLinkCpp -s <source_directory> -o <destination_directory> -i <ignore_pattern> -d
 ```
 
 Example:
 
 ```bash
-HardLinkCpp C:\path\to\source C:\path\to\destination
+HardLinkCpp -s "C:\path\to\source" -o "C:\path\to\destination" -i "*.txt" -d
 ```
 
 This command will recursively traverse `C:\path\to\source` and create hard links
-for all files in `C:\path\to\destination`, preserving the directory structure.
+for all files in `C:\path\to\destination`, preserving the directory structure and ignoring
+any files that match the pattern `*.txt`.
+
+Both `-i` and `-d` flags are optional.
+`-d` flag (stands for debug) will print additional information.
+Providing the `-i` flag will ignore files that match the pattern.
+`*` before the pattern will match files ending in the pattern. Example: `*.txt`
+`*` after the pattern will match files that start with the pattern. Example: `prefix*`
 
 ## Notes
 

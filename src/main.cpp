@@ -3,6 +3,7 @@
 
 int main(int argc, char *argv[]) {
   String sourceDir, destinationDir;
+  String ignorePattern = "";
   auto cmdArgs = getCmdArgs(argc, argv);
 
   if (cmdArgs.empty()) {
@@ -15,16 +16,20 @@ int main(int argc, char *argv[]) {
     setDebugMode(true);
   }
 
+  auto ignoreKey = cmdArgs.find("ignore");
+  if (NOT(ignoreKey == cmdArgs.end())) {
+    ignorePattern = ignoreKey->second;
+  }
+
   auto help = cmdArgs.find("help");
   if (NOT(help == cmdArgs.end())) {
-    std::cout << ("linkfiles -i(--input) INPUT_DIR -o(--output) OUTPUT_DIR "
-                  "[-h(--help)]");
+    std::cout << HELP;
     return 1;
   }
 
-  auto input = cmdArgs.find("input");
-  if (NOT(input == cmdArgs.end())) {
-    Path absolutePath = fs::absolute(input->second);
+  auto source = cmdArgs.find("source");
+  if (NOT(source == cmdArgs.end())) {
+    Path absolutePath = fs::absolute(source->second);
     sourceDir = absolutePath.string();
     printLn("Linking from: " + sourceDir);
   }
@@ -45,7 +50,7 @@ int main(int argc, char *argv[]) {
     if (NOT fs::is_directory(sourceDir)) {
       createLink(sourceDir, destinationDir);
     } else {
-      linkFiles(sourceDir, destinationDir);
+      linkFiles(sourceDir, destinationDir, false, ignorePattern);
     }
   }
 

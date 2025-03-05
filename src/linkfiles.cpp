@@ -77,28 +77,63 @@ bool createLink(const String &WHAT, const String &WHERE, bool exist_ok) {
   return true;
 }
 
-void batchCreateLink(const String &FROM, const String &TO, int &LINKED, bool exist_ok) {
+void batchCreateLink(const String &FROM, const String &TO, int &LINKED,
+                     bool exist_ok, const String &ignorePattern) {
   Path destinationPath(TO);
   try {
+    int patternPos = -1;
+    String pattern = "";
+
+    // Parse the ignore pattern
+    if (NOT ignorePattern.empty()) {
+      if (startswith(ignorePattern, "*")) {
+        patternPos = 0;
+        pattern = ignorePattern.substr(1);
+      } else if (endswith(ignorePattern, "*")) {
+        patternPos = 1;
+        pattern = ignorePattern.substr(0, ignorePattern.length() - 1);
+      } else {
+        patternPos = 2;
+        pattern = ignorePattern;
+      }
+    }
+
     // Iterate over directory entries
     for (const auto &entry : fs::directory_iterator(FROM)) {
+      String entryPath = entry.path().string();
+      String entryName = entry.path().filename().string();
       if (NOT fs::is_directory(entry.path())) {
+        // Skip files that match the ignore pattern
+        bool ignored = false;
+        if ((patternPos == 0 AND startswith(entryName, pattern))
+                OR(patternPos == 1 AND endswith(entryName, pattern))
+                    OR(patternPos == 2 AND contains(entryName, pattern))) {
+          ignored = true;
+        }
+
+        if (ignored) {
+          sStream message;
+          message << "Skipping " << entryName << '\n';
+          print(message.str());
+          continue;
+        }
+
         // Create a link for a file entry
-        if (createLink(entry.path().string(), TO, exist_ok)) {
+        if (createLink(entryPath, TO, exist_ok)) {
           // Increment the counter for a successfully created link
           sStream message;
-          message << "Linked " << entry.path().filename() << " to " << TO
-                  << '\n';
+          message << "Linked " << entryName << " to " << TO << '\n';
           print(message.str());
           LINKED++;
         }
       } else {
         // Batch create links for the subdirectory recursively
-        Path newDestination = destinationPath / entry.path().filename();
+        Path newDestination = destinationPath / entryName;
         if (NOT fs::exists(newDestination)) {
           fs::create_directories(newDestination);
         }
-        batchCreateLink(entry.path().string(), newDestination.string(), LINKED, exist_ok);
+        batchCreateLink(entryPath, newDestination.string(), LINKED, exist_ok,
+                        ignorePattern);
       }
     }
   } catch (const fs::filesystem_error &e) {
@@ -107,9 +142,10 @@ void batchCreateLink(const String &FROM, const String &TO, int &LINKED, bool exi
   }
 }
 
-int linkFiles(const String &FROM, const String &TO, bool exist_ok) {
+int linkFiles(const String &FROM, const String &TO, bool exist_ok,
+              const String &ignorePattern) {
   int linkedCount = 0;
-  batchCreateLink(FROM, TO, linkedCount, exist_ok);
+  batchCreateLink(FROM, TO, linkedCount, exist_ok, ignorePattern);
 
   sStream message;
   message << "\nSuccesfully created links for " << linkedCount << " files\n";
