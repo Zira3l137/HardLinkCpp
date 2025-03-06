@@ -53,14 +53,14 @@ bool createLink(const String &WHAT, const String &WHERE, bool exist_ok) {
   // Check if the source is already linked at the destination
   int linkCheckResult = alreadyLinked(WHAT, WHERE);
   if (linkCheckResult == 0) {
-    if (NOT exist_ok) {
+    if (!exist_ok) {
       printErr("File is already linked - " + WHAT);
       return false;
     } else {
       return true;
     }
   } else if (linkCheckResult == -1) {
-    if (NOT exist_ok) {
+    if (!exist_ok) {
       printErr("Failed to check if file is already linked: " + WHAT);
       return false;
     }
@@ -85,7 +85,7 @@ void batchCreateLink(const String &FROM, const String &TO, int &LINKED,
     String pattern = "";
 
     // Parse the ignore pattern
-    if (NOT ignorePattern.empty()) {
+    if (!ignorePattern.empty()) {
       if (startswith(ignorePattern, "*")) {
         patternPos = 0;
         pattern = ignorePattern.substr(1);
@@ -102,12 +102,12 @@ void batchCreateLink(const String &FROM, const String &TO, int &LINKED,
     for (const auto &entry : fs::directory_iterator(FROM)) {
       String entryPath = entry.path().string();
       String entryName = entry.path().filename().string();
-      if (NOT fs::is_directory(entry.path())) {
+      if (!fs::is_directory(entry.path())) {
         // Skip files that match the ignore pattern
         bool ignored = false;
-        if ((patternPos == 0 AND startswith(entryName, pattern))
-                OR(patternPos == 1 AND endswith(entryName, pattern))
-                    OR(patternPos == 2 AND contains(entryName, pattern))) {
+        if ((patternPos == 0 && startswith(entryName, pattern)) ||
+            (patternPos == 1 && endswith(entryName, pattern)) ||
+            (patternPos == 2 && contains(entryName, pattern))) {
           ignored = true;
         }
 
@@ -129,7 +129,7 @@ void batchCreateLink(const String &FROM, const String &TO, int &LINKED,
       } else {
         // Batch create links for the subdirectory recursively
         Path newDestination = destinationPath / entryName;
-        if (NOT fs::exists(newDestination)) {
+        if (!fs::exists(newDestination)) {
           fs::create_directories(newDestination);
         }
         batchCreateLink(entryPath, newDestination.string(), LINKED, exist_ok,

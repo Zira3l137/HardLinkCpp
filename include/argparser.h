@@ -5,23 +5,21 @@
 
 typedef enum { Str, Int, Bool } ArgType;
 
-class CmdArg {
-public:
+struct CmdArg {
   String longName;
   String shortName;
   ArgType type;
-
-  CmdArg(const String longName, const String shortName, const ArgType type);
 };
 
 class ArgParser {
 public:
-  Vector<uPtr<CmdArg>> args;
+  std::vector<uPtr<CmdArg>> args;
 
   ArgParser(int argc, char *argv[]);
   // ~ArgParser();
 
-  void addArg(uPtr<CmdArg> arg);
+  void addArg(const String longName, const String shortName,
+              const ArgType type);
   StringMap parse();
 
 private:
