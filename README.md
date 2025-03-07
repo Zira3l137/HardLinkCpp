@@ -51,7 +51,7 @@ Once built, you can use the executable to create hard links from a source direct
 to a destination directory. The basic syntax is:
 
 ```bash
-HardLinkCpp -s <source_directory> -o <destination_directory> -i <ignore_pattern> -d
+HardLinkCpp -s <source_directory> -o <destination_directory> -i <ignore_pattern> -d <debug_mode>
 ```
 
 Example:
@@ -65,7 +65,7 @@ for all files in `C:\path\to\destination`, preserving the directory structure an
 any files that match the pattern `*.txt`.
 
 Both `-i` and `-d` flags are optional.
-`-d` flag (stands for debug) will print additional information.
+`-d` flag (stands for debug) will set internal debug mode (0 = all, 1 = info and errors, 2 = errors only 3 = none).
 Providing the `-i` flag will ignore files that match the pattern.
 `*` before the pattern will match files ending in the pattern. Example: `*.txt`
 `*` after the pattern will match files that start with the pattern. Example: `prefix*`
