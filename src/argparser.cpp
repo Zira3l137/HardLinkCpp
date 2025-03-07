@@ -1,93 +1,134 @@
 #include "argparser.h"
 #include "utils.h"
+#include <cstring>
+#include <iostream>
 
-ArgParser::ArgParser(int argc, char *argv[]) : argc(argc), argv(argv) {}
+std::map<argparser::ArgType, std::string> argumentType = {
+    {argparser::ArgType::Str, "STRING"},
+    {argparser::ArgType::Int, "INT"},
+    {argparser::ArgType::Bool, "BOOL"},
+    {argparser::ArgType::Flag, "FLAG"},
+};
 
-void ArgParser::addArg(const String longName, const String shortName,
-                       const ArgType type) {
-  uPtr<CmdArg> arg = to_uPtr<CmdArg>();
-
-  arg->longName = longName;
-  arg->shortName = shortName;
-  arg->type = type;
-
-  args.push_back(move_uPtr(arg));
+argparser::ArgParser::ArgParser(int argc, char *argv[])
+    : argc(argc), argv(argv) {
+    this->addArg("--help", "-h", "Show this help message.", ArgType::Flag);
 }
 
-StringMap ArgParser::parse() {
-  StringMap found;
+void argparser::ArgParser::addArg(const std::string longName,
+                                  const std::string shortName,
+                                  const std::string description,
+                                  const ArgType type) {
+    std::unique_ptr<CmdArg> arg = std::make_unique<CmdArg>();
 
-  // Set default values for boolean flags
-  for (const auto &arg : args) {
-    if (arg->type == ArgType::Bool) {
-      found[arg->longName] = "false";
-    }
-  }
+    arg->longName = longName;
+    arg->shortName = shortName;
+    arg->type = type;
 
-  // Iterate over command line arguments
-  for (int i = 1; i < this->argc; i++) {
-    if (this->argv[i] == nullptr) {
-      continue;
+    if (description != "") {
+        arg->description = description;
     }
 
-    String argName(this->argv[i]);
+    args.push_back(std::move(arg));
+}
 
-    // Iterate over known flags
+std::map<std::string, std::string> argparser::ArgParser::parse() {
+    std::map<std::string, std::string> found;
+
     for (const auto &arg : args) {
-
-      // Skip unknown flags
-      if (arg->longName != argName && arg->shortName != argName) {
-        continue;
-      }
-
-      switch (arg->type) {
-
-      // Handle boolean flags
-      case ArgType::Bool: {
-        found[arg->longName] = "true";
-        break;
-      }
-
-      // Handle string flags
-      case ArgType::Str: {
-        // Check if the next argument exists
-        if (i + 1 >= this->argc || this->argv[i + 1] == nullptr ||
-            String(this->argv[i + 1]) == "") {
-          printErr("Missing argument for " + arg->longName);
-          exit(1);
+        if (arg->type == ArgType::Flag) {
+            found[arg->longName] = "off";
         }
-
-        // Set the value for the flag and skip the next argument as
-        // it has been consumed
-        found[arg->longName] = this->argv[i + 1];
-        i++;
-        break;
-      }
-
-      // Handle integer flags
-      case ArgType::Int: {
-        if (i + 1 >= this->argc || this->argv[i + 1] == nullptr ||
-            String(this->argv[i + 1]) == "") {
-          printErr("Missing argument for " + arg->longName);
-          exit(1);
-        }
-
-        // Check if the next argument is a number
-        if (!(isallnum(this->argv[i + 1]))) {
-          printErr("Expected a number for " + arg->longName + " got \"" +
-                   argv[i + 1] + "\"");
-          exit(1);
-        }
-
-        found[arg->longName] = this->argv[i + 1];
-        i++;
-        break;
-      }
-      }
-
-      // Found the argument no need to look further
-      break;
     }
-  }
-  return found;
+
+    // CMD args iteration begins
+    for (int i = 1; i < this->argc; i++) {
+        if (this->argv[i] == nullptr) {
+            continue;
+        }
+
+        std::string argName(this->argv[i]);
+
+        // Flag iteration begins
+        for (const auto &arg : args) {
+            if (arg->longName != argName && arg->shortName != argName) {
+                continue;
+            }
+
+            // Flag switch ends
+            switch (arg->type) {
+
+            case ArgType::Flag: {
+                found[arg->longName] = "on";
+                break;
+            }
+
+            case ArgType::Bool: {
+                if (i + 1 >= this->argc || this->argv[i + 1] == nullptr) {
+                    std::cout << "Missing argument for " << arg->longName
+                              << " \n";
+                    exit(1);
+                }
+
+                auto argValue = utils::str::toLower_c(this->argv[i + 1]);
+                if (strcmp(argValue, "") == 0 ||
+                    strcmp(argValue, "false") != 0 ||
+                    strcmp(argValue, "true") != 0 ||
+                    strcmp(argValue, "0") != 0 || strcmp(argValue, "1") != 0) {
+                    std::cout << "Provided argument is not a valid bool "
+                              << arg->longName << " \n";
+                    exit(1);
+                }
+
+                found[arg->longName] = this->argv[i + 1];
+                i++;
+                break;
+            }
+
+            case ArgType::Str: {
+                if (i + 1 >= this->argc || this->argv[i + 1] == nullptr) {
+                    std::cout << "Missing argument for " << arg->longName
+                              << " \n";
+                    exit(1);
+                }
+
+                found[arg->longName] = this->argv[i + 1];
+                i++;
+                break;
+            }
+
+            case ArgType::Int: {
+                if (i + 1 >= this->argc || this->argv[i + 1] == nullptr ||
+                    std::string(this->argv[i + 1]) == "") {
+                    std::cout << "Missing argument for " << arg->longName
+                              << " \n";
+                    exit(1);
+                }
+
+                if (!(utils::str::isallnum(this->argv[i + 1]))) {
+                    std::cout << "Provided argument is not a valid number "
+                              << arg->longName << " \n";
+                    exit(1);
+                }
+
+                found[arg->longName] = this->argv[i + 1];
+                i++;
+                break;
+            }
+            } // Flag switch ends
+
+            break;
+        } // Flag iteration ends
+
+    } // CMD args iteration ends
+    return found;
+}
+
+void argparser::ArgParser::printHelp() {
+    for (const auto &arg : this->args) {
+        std::cout << YELLOW << "\n"
+                  << arg->longName << ", " << arg->shortName << GREEN << " - "
+                  << argumentType[arg->type] << " \n\t" << RESET
+                  << arg->description << std::endl;
+    }
 }

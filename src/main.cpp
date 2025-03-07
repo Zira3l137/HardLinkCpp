@@ -1,69 +1,83 @@
 #include "argparser.h"
-#include "linkfiles.h"
-#include "utils.h"
+#include "linker.h"
+#include "logger.h"
 #include <filesystem>
 
-StringMap parse_args(int argc, char *argv[]) {
-  ArgParser parser(argc, argv);
-
-  parser.addArg("--help", "-h", ArgType::Bool);
-  parser.addArg("--debug", "-d", ArgType::Bool);
-  parser.addArg("--source", "-s", ArgType::Str);
-  parser.addArg("--output", "-o", ArgType::Str);
-  parser.addArg("--ignore", "-i", ArgType::Str);
-
-  return parser.parse();
-}
+namespace fs = std::filesystem;
 
 int main(int argc, char *argv[]) {
-  String sourceDir, destinationDir;
-  String ignorePattern = "";
-  StringMap cmdArgs = parse_args(argc, argv);
+    argparser::ArgParser parser(argc, argv);
 
-  auto debug = cmdArgs.find("--debug");
-  if (debug != cmdArgs.end()) {
-    if (debug->second == "true") {
-      setDebugMode(true);
+    parser.addArg("--debug", "-d",
+                  "Set log level. [0-3] - DEBUG, INFO, WARN, ERROR. Optional. "
+                  "Defaults to 0.",
+                  argparser::ArgType::Int);
+
+    parser.addArg("--source", "-s", "Source directory to link from. Required.",
+                  argparser::ArgType::Str);
+
+    parser.addArg("--output", "-o",
+                  "Destination directory to link to. Required.",
+                  argparser::ArgType::Str);
+
+    parser.addArg("--ignore", "-i",
+                  "Ignore pattern to exclude files matching that pattern from "
+                  "linking. Optional.",
+                  argparser::ArgType::Str);
+
+    std::map<std::string, std::string> cmdArgs = parser.parse();
+
+    std::string sourceDir, destinationDir;
+    std::string ignorePattern = "";
+
+    auto debug = cmdArgs.find("--debug");
+    if (debug != cmdArgs.end()) {
+        logger::LogLevel level =
+            static_cast<logger::LogLevel>(std::stoi(debug->second));
+        LOGGER_SET(level);
     }
-  }
 
-  auto help = cmdArgs.find("--help");
-  if (help != cmdArgs.end()) {
-    if (help->second == "true") {
-      std::cout << HELP;
-      return 0;
+    auto help = cmdArgs.find("--help");
+    if (help != cmdArgs.end()) {
+        if (std::string(help->second) == "on") {
+            parser.printHelp();
+            return 0;
+        }
     }
-  }
 
-  auto source = cmdArgs.find("--source");
-  if (source != cmdArgs.end()) {
-    Path absolutePath = fs::absolute(source->second);
-    sourceDir = absolutePath.string();
-    printLn("Linking from: " + sourceDir);
-  }
+    auto source = cmdArgs.find("--source");
+    if (source != cmdArgs.end()) {
+        fs::path absolutePath = fs::absolute(source->second);
+        sourceDir = absolutePath.string();
+        LOG_INFO("Linking from: " + sourceDir);
+    }
 
-  auto output = cmdArgs.find("--output");
-  if (output != cmdArgs.end()) {
-    Path absolutePath = fs::absolute(output->second);
-    destinationDir = absolutePath.string();
-    printLn("To: " + destinationDir + "\n");
-  }
+    auto output = cmdArgs.find("--output");
+    if (output != cmdArgs.end()) {
+        fs::path absolutePath = fs::absolute(output->second);
+        destinationDir = absolutePath.string();
+        LOG_INFO("To: " + sourceDir);
+    }
 
-  auto ignoreKey = cmdArgs.find("--ignore");
-  if (ignoreKey != cmdArgs.end()) {
-    ignorePattern = ignoreKey->second;
-  }
+    auto ignoreKey = cmdArgs.find("--ignore");
+    if (ignoreKey != cmdArgs.end()) {
+        ignorePattern = ignoreKey->second;
+        LOG_INFO("Ignoring files matching: " + ignorePattern);
+    }
 
-  if (sourceDir != "" && destinationDir != "") {
-    if (!fs::is_directory(sourceDir)) {
-      createLink(sourceDir, destinationDir);
+    if (sourceDir != "" && destinationDir != "") {
+        if (!fs::is_directory(sourceDir)) {
+            LOG_DEBUG("Source is not a directory, linking a single file...");
+            linker::createLink(sourceDir, destinationDir);
+        } else {
+            LOG_DEBUG("Source is a directory, batch linking...");
+            linker::linkFiles(sourceDir, destinationDir, false, ignorePattern);
+        }
     } else {
-      linkFiles(sourceDir, destinationDir, false, ignorePattern);
+        LOG_ERROR("Source or destination not specified");
+        parser.printHelp();
+        return 1;
     }
-  } else {
-    std::cout << ("Missing source or destination directory");
-    return 1;
-  }
 
-  return 0;
+    return 0;
 }

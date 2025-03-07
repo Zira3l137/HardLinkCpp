@@ -1,58 +1,55 @@
 #include "utils.h"
+#include <cstring>
+#include <sstream>
 
-bool DEBUG_MODE = false;
-
-void setDebugMode(bool debug) { DEBUG_MODE = debug; }
-
-bool startswith(const String &haystack, const String &needle) {
-  return haystack.find(needle) == 0;
+bool utils::str::startswith(const std::string &haystack,
+                            const std::string &needle) {
+    return haystack.find(needle) == 0;
 }
 
-bool endswith(const String &haystack, const String &needle) {
-  return haystack.find(needle) == (haystack.length() - needle.length());
+bool utils::str::endswith(const std::string &haystack,
+                          const std::string &needle) {
+    return haystack.find(needle) == (haystack.length() - needle.length());
 }
 
-bool contains(const String &haystack, const String &needle) {
-  return haystack.find(needle) != String::npos;
+bool utils::str::contains(const std::string &haystack,
+                          const std::string &needle) {
+    return haystack.find(needle) != std::string::npos;
 }
 
-bool isallnum(const String &s) {
-  if (s.empty()) {
-    return false;
-  }
-  for (char c : s) {
-    if (!std::isdigit(c)) {
-      return false;
+bool utils::str::isallnum(const std::string &s) {
+    if (s.empty()) {
+        return false;
     }
-  }
-  return true;
+
+    for (char c : s) {
+        if (!std::isdigit(c)) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
-StringVector *split(const String &s, char delim) {
-  StringVector *result = new StringVector();
-  sStream ss(s);
-  String item;
+char *utils::str::toLower_c(const char *s) {
+    char *copy = new char[strlen(s) + 1];
 
-  while (std::getline(ss, item, delim)) {
-    result->push_back(item);
-  }
-  return result;
+    strcpy(copy, s);
+    for (int i = 0; i < strlen(copy); i++) {
+        copy[i] = tolower(copy[i]);
+    }
+
+    return copy;
 }
 
-void print(const String &s) {
-  if (DEBUG_MODE) {
-    std::cout << s;
-  }
-}
+std::vector<std::string> *utils::str::split(const std::string &s, char delim) {
+    std::vector<std::string> *result = new std::vector<std::string>;
+    std::stringstream ss(s);
+    std::string item;
 
-void printLn(const String &s) {
-  if (DEBUG_MODE) {
-    std::cout << s << std::endl;
-  }
-}
+    while (std::getline(ss, item, delim)) {
+        result->push_back(item);
+    }
 
-void printErr(const String &s) {
-  if (DEBUG_MODE) {
-    std::cout << "Error: " << s << std::endl;
-  }
+    return result;
 }
