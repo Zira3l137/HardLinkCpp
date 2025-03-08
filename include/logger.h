@@ -56,8 +56,8 @@ class Logger {
     void setLevel(LogLevel level);
     LogLevel getLevel();
 
-    void log(const char *file, const int &line, const char *func,
-             const std::string &message);
+    void log(LogLevel level, const char *file, const int &line,
+             const char *func, const std::string &message);
 
   private:
     LogLevel level;
@@ -65,34 +65,33 @@ class Logger {
     Logger(const Logger &) = delete;            // Disable copy constructor
     Logger &operator=(const Logger &) = delete; // Disable copy assignment
 
-    static Logger *instance; // Singleton
-    Logger() : level(logger::LogLevel::WARN) {}
+    Logger() : level(LogLevel::WARN) {}
 };
 
 #define LOGGER_SET(level) logger::Logger::getInstance().setLevel(level)
 
 #define LOG_DEBUG(message)                                                     \
     if (logger::Logger::getInstance().getLevel() <= logger::LogLevel::DEBUG) { \
-        logger::Logger::getInstance().log(__FILE__, __LINE__, __func__,        \
-                                          message);                            \
+        logger::Logger::getInstance().log(logger::LogLevel::DEBUG, __FILE__,   \
+                                          __LINE__, __func__, message);        \
     }
 
 #define LOG_INFO(message)                                                      \
     if (logger::Logger::getInstance().getLevel() <= logger::LogLevel::INFO) {  \
-        logger::Logger::getInstance().log(__FILE__, __LINE__, __func__,        \
-                                          message);                            \
+        logger::Logger::getInstance().log(logger::LogLevel::INFO, __FILE__,    \
+                                          __LINE__, __func__, message);        \
     }
 
 #define LOG_WARN(message)                                                      \
     if (logger::Logger::getInstance().getLevel() <= logger::LogLevel::WARN) {  \
-        logger::Logger::getInstance().log(__FILE__, __LINE__, __func__,        \
-                                          message);                            \
+        logger::Logger::getInstance().log(logger::LogLevel::WARN, __FILE__,    \
+                                          __LINE__, __func__, message);        \
     }
 
 #define LOG_ERROR(message)                                                     \
     if (logger::Logger::getInstance().getLevel() <= logger::LogLevel::ERROR) { \
-        logger::Logger::getInstance().log(__FILE__, __LINE__, __func__,        \
-                                          message);                            \
+        logger::Logger::getInstance().log(logger::LogLevel::ERROR, __FILE__,   \
+                                          __LINE__, __func__, message);        \
     }
 
 } // namespace logger
