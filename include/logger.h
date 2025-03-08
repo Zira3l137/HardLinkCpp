@@ -56,7 +56,7 @@ class Logger {
     void setLevel(LogLevel level);
     LogLevel getLevel();
 
-    void log(const std::string &file, const int &line, const std::string &func,
+    void log(const char *file, const int &line, const char *func,
              const std::string &message);
 
   private:

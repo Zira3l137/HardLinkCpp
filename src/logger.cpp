@@ -16,11 +16,19 @@ logger::Logger &logger::Logger::getInstance() {
     return instance;
 }
 
-void logger::Logger::setLevel(logger::LogLevel level) { this->level = level; }
-logger::LogLevel logger::Logger::getLevel() { return this->level; }
+void logger::Logger::setLevel(logger::LogLevel level) {
+    std::lock_guard<std::mutex> lock(loggerMutex);
+    this->level = level;
+}
 
-void logger::Logger::log(const std::string &file, const int &line,
-                         const std::string &func, const std::string &message) {
+logger::LogLevel logger::Logger::getLevel() {
+    std::lock_guard<std::mutex> lock(loggerMutex);
+    return this->level;
+}
+
+void logger::Logger::log(const char *file, const int &line, const char *func,
+                         const std::string &message) {
+    std::lock_guard<std::mutex> lock(loggerMutex);
     std::cout << LevelColors[this->level] << "[" << this->level << "]-[" << file
               << ", at line " << line << "]->[" << func << "]: " << RESET
               << message << "\n";
