@@ -17,3 +17,5 @@ bin/
 # Misc
 .cache/
 compile_commands.json
+push.ps1
+pull.ps1
