@@ -71,10 +71,9 @@ std::map<std::string, std::string> argparser::ArgParser::parse() {
                 }
 
                 auto argValue = utils::str::toLower_c(this->argv[i + 1]);
-                if (strcmp(argValue, "") == 0 ||
-                    strcmp(argValue, "false") != 0 ||
-                    strcmp(argValue, "true") != 0 ||
-                    strcmp(argValue, "0") != 0 || strcmp(argValue, "1") != 0) {
+                if (strcmp(argValue, "false") != 0 &&
+                    strcmp(argValue, "true") != 0 &&
+                    strcmp(argValue, "0") != 0 && strcmp(argValue, "1") != 0) {
                     std::cout << "Provided argument is not a valid bool "
                               << arg->longName << " \n";
                     exit(1);

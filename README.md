@@ -2,8 +2,7 @@
 # HardLinkCpp
 
 HardLinkCpp is a C++ utility designed to recursively create hard links for
-files from a source directory into a destination directory. This can help
-save disk space by linking identical files instead of duplicating them.
+files from a source directory into a destination directory.
 
 ## Features
 
@@ -57,12 +56,13 @@ HardLinkCpp -s <source_directory> -o <destination_directory> -i <ignore_pattern>
 Example:
 
 ```bash
-HardLinkCpp -s "C:\path\to\source" -o "C:\path\to\destination" -i "*.txt" -d
+HardLinkCpp -s "C:\path\to\source" -o "C:\path\to\destination" -i "*.txt" -d 0
 ```
 
 This command will recursively traverse `C:\path\to\source` and create hard links
 for all files in `C:\path\to\destination`, preserving the directory structure and ignoring
-any files that match the pattern `*.txt`.
+any files that match the pattern `*.txt`. Additionally, the debug mode will be set to 0 (all).
+Which means that all log messages will be printed to the console.
 
 Both `-i` and `-d` flags are optional.
 `-d` flag (stands for debug) will set internal debug mode (0 = all, 1 = info and errors, 2 = errors only 3 = none).
