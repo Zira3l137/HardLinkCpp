@@ -1,5 +1,5 @@
 #include "argparser.h"
-#include "utils.h"
+#include <charconv>
 #include <iostream>
 #include <unordered_map>
 
@@ -8,6 +8,39 @@
 #elif defined(__linux__)
 #define PATH_SEPARATOR "/"
 #endif
+
+bool argparser::misc::isallnum(const std::string &s) {
+    if (s.empty()) {
+        return false;
+    }
+
+    int int_val;
+    const char *int_first = s.data();
+    const char *int_last = int_first + s.size();
+    if (std::from_chars(int_first, int_last, int_val).ec == std::errc()) {
+        return true; // Successfully parsed as an integer
+    }
+
+    double double_val;
+    const char *double_first = s.data();
+    const char *double_last = double_first + s.size();
+    if (std::from_chars(double_first, double_last, double_val).ec ==
+        std::errc()) {
+        return true; // Successfully parsed as a double
+    }
+
+    return false; // Neither integer nor double
+}
+
+std::string argparser::misc::toLower(const std::string &s) {
+    std::string copy(s);
+
+    for (int i = 0; i < (int)copy.length(); i++) {
+        copy[i] = tolower(copy[i]);
+    }
+
+    return copy;
+}
 
 argparser::ArgParser::ArgParser(int argc, char *argv[])
     : argc(argc), argv(argv) {
@@ -37,16 +70,18 @@ void argparser::ArgParser::addArg(const std::string longName,
     arg->type = type;
 
     switch (type) {
-    case ArgType::Str:
+    case argparser::ArgType::Str:
         arg->value = std::string("");
         break;
-    case ArgType::Int:
+    case argparser::ArgType::Int:
         arg->value = int(0);
         break;
-    case ArgType::Bool:
-    case ArgType::Flag:
+    case argparser::ArgType::Bool:
+    case argparser::ArgType::Flag:
         arg->value = bool(false);
         break;
+    case argparser::ArgType::Double:
+        arg->value = double(0.0);
     }
 
     if (description != "") {
@@ -105,6 +140,16 @@ void argparser::ArgParser::addArg(const std::string longName,
                                         "argument: " +
                                         longName);
         }
+    case ArgType::Double:
+        try {
+            arg->value = std::get<double>(defaultValue);
+            break;
+        } catch (const std::bad_variant_access &e) {
+            throw std::invalid_argument(
+                "Invalid default value for a floating point numeric"
+                "argument: " +
+                longName);
+        }
     }
 
     if (description != "") {
@@ -146,7 +191,7 @@ void argparser::ArgParser::parse() {
                                                 pair.second->longName);
                 }
 
-                auto argValue = utils::str::toLower(this->argv[i + 1]);
+                auto argValue = argparser::misc::toLower(this->argv[i + 1]);
                 if (argValue != "false" && argValue != "true" &&
                     argValue != "0" && argValue != "1") {
                     std::cout << "Provided argument is not a valid bool "
@@ -169,7 +214,6 @@ void argparser::ArgParser::parse() {
                     throw std::invalid_argument("Missing argument for " +
                                                 pair.second->longName);
                 }
-
                 pair.second->value = this->argv[i + 1];
                 i++;
                 break;
@@ -184,7 +228,7 @@ void argparser::ArgParser::parse() {
                                                 pair.second->longName);
                 }
 
-                if (!(utils::str::isallnum(this->argv[i + 1]))) {
+                if (!(argparser::misc::isallnum(this->argv[i + 1]))) {
                     std::cout << "Provided argument is not a valid number "
                               << pair.second->longName << " \n";
                     throw std::invalid_argument("Provided argument is not a "
@@ -195,6 +239,26 @@ void argparser::ArgParser::parse() {
                 pair.second->value = std::stoi(this->argv[i + 1]);
                 i++;
                 break;
+            }
+
+            case ArgType::Double: {
+                if (i + 1 >= this->argc || this->argv[i + 1] == nullptr ||
+                    std::string(this->argv[i + 1]) == "") {
+                    std::cout << "Missing argument for "
+                              << pair.second->longName << " \n";
+                    throw std::invalid_argument("Missing argument for " +
+                                                pair.second->longName);
+                }
+
+                if (!(argparser::misc::isallnum(this->argv[i + 1]))) {
+                    std::cout << "Provided argument is not a valid number "
+                              << pair.second->longName << " \n";
+                    throw std::invalid_argument("Provided argument is not a "
+                                                "valid number " +
+                                                pair.second->longName);
+                }
+
+                pair.second->value = std::stod(this->argv[i + 1]);
             }
             } // Flag switch ends
 

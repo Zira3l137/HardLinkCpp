@@ -1,5 +1,5 @@
 #include "utils.h"
-#include <cstring>
+#include <charconv>
 #include <sstream>
 
 bool utils::str::startswith(const std::string &haystack,
@@ -22,9 +22,22 @@ bool utils::str::isallnum(const std::string &s) {
         return false;
     }
 
-    size_t start = (s[0] == '-') ? 1 : 0;
+    int int_val;
+    const char *int_first = s.data();
+    const char *int_last = int_first + s.size();
+    if (std::from_chars(int_first, int_last, int_val).ec == std::errc()) {
+        return true; // Successfully parsed as an integer
+    }
 
-    return s.substr(start).find_first_not_of("0123456789") == std::string::npos;
+    double double_val;
+    const char *double_first = s.data();
+    const char *double_last = double_first + s.size();
+    if (std::from_chars(double_first, double_last, double_val).ec ==
+        std::errc()) {
+        return true; // Successfully parsed as a double
+    }
+
+    return false; // Neither integer nor double
 }
 
 std::string utils::str::toLower(const std::string &s) {

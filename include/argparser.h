@@ -1,7 +1,6 @@
 #pragma once
 #include <iostream>
 #include <memory>
-#include <optional>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -12,7 +11,7 @@ constexpr const char *YELLOW = "\033[33m";
 constexpr const char *GREEN = "\033[32m";
 constexpr const char *RESET = "\033[0m";
 
-enum ArgType { Str, Int, Bool, Flag };
+enum ArgType { Str, Int, Bool, Flag, Double };
 
 inline std::ostream &operator<<(std::ostream &os, const ArgType &type) {
     switch (type) {
@@ -28,12 +27,14 @@ inline std::ostream &operator<<(std::ostream &os, const ArgType &type) {
     case ArgType::Flag:
         os << "FLAG";
         break;
+    case ArgType::Double:
+        os << "DOUBLE";
+        break;
     }
     return os;
 }
 
-using ArgValue = std::variant<std::string, int, bool>;
-using OptionalValue = std::optional<ArgValue>;
+using ArgValue = std::variant<std::string, int, bool, double>;
 
 struct CmdArg {
     std::string longName;
@@ -81,5 +82,12 @@ class ArgParser {
     std::string programName;
     std::string description = "";
 };
+
+namespace misc {
+
+bool isallnum(const std::string &s);
+std::string toLower(const std::string &s);
+
+} // namespace misc
 
 } // namespace argparser
