@@ -43,7 +43,7 @@ class ArgParser {
     std::vector<std::unique_ptr<CmdArg>> args;
 
     ArgParser(int argc, char *argv[]);
-    // ~ArgParser();
+    ~ArgParser() = default;
 
     void addArg(const std::string longName, const std::string shortName,
                 const std::string description = "",
