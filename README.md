@@ -66,7 +66,7 @@ Which means that all log messages will be printed to the console.
 
 Both `-i` and `-d` flags are optional.
 `-d` flag (stands for debug) will set internal debug mode
-(0 = all, 1 = info, warnings, errors, 2 = errors and warnings, 3 = errors only, 3 = none).
+(0 = all, 1 = info, warnings, errors, 2 = errors and warnings, 3 = errors only, 4 = none).
 Providing the `-i` flag will ignore files that match the pattern.
 `*` before the pattern will match files ending in the pattern. Example: `*.txt`
 `*` after the pattern will match files that start with the pattern. Example: `prefix*`
