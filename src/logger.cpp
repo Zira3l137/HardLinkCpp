@@ -1,8 +1,8 @@
 #include "logger.h"
-#include <map>
 #include <string>
+#include <unordered_map>
 
-std::map<logger::LogLevel, const char *> LevelColors = {
+std::unordered_map<logger::LogLevel, const char *> LevelColors = {
     {logger::LogLevel::DEBUG, logger::BOLDCYAN},
     {logger::LogLevel::INFO, logger::BOLDGREEN},
     {logger::LogLevel::WARN, logger::BOLDYELLOW},

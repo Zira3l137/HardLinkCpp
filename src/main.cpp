@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
                   "linking. Optional.",
                   argparser::ArgType::Str);
 
-    std::map<std::string, std::string> cmdArgs = parser.parse();
+    auto cmdArgs = parser.parse();
 
     std::string sourceDir, destinationDir;
     std::string ignorePattern = "";

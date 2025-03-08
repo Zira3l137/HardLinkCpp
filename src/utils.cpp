@@ -22,20 +22,15 @@ bool utils::str::isallnum(const std::string &s) {
         return false;
     }
 
-    for (char c : s) {
-        if (!std::isdigit(c)) {
-            return false;
-        }
-    }
+    size_t start = (s[0] == '-') ? 1 : 0;
 
-    return true;
+    return s.substr(start).find_first_not_of("0123456789") == std::string::npos;
 }
 
-char *utils::str::toLower_c(const char *s) {
-    char *copy = new char[strlen(s) + 1];
+std::string utils::str::toLower(const std::string &s) {
+    std::string copy(s);
 
-    strcpy(copy, s);
-    for (int i = 0; i < strlen(copy); i++) {
+    for (int i = 0; i < (int)copy.length(); i++) {
         copy[i] = tolower(copy[i]);
     }
 

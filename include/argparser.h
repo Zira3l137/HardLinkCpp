@@ -1,9 +1,8 @@
 #pragma once
 #include <iostream>
-#include <map>
 #include <memory>
 #include <string>
-#include <vector>
+#include <unordered_map>
 
 namespace argparser {
 
@@ -40,7 +39,7 @@ struct CmdArg {
 
 class ArgParser {
   public:
-    std::vector<std::unique_ptr<CmdArg>> args;
+    std::unordered_map<std::string, std::unique_ptr<CmdArg>> args;
 
     ArgParser(int argc, char *argv[]);
     ~ArgParser() = default;
@@ -49,13 +48,26 @@ class ArgParser {
                 const std::string description = "",
                 const ArgType type = ArgType::Str);
 
-    std::map<std::string, std::string> parse();
+    std::unordered_map<std::string, std::string> parse();
+
+    void setProgramName(const std::string name) { this->programName = name; }
+
+    void setDescription(const std::string description) {
+        this->description = description;
+    }
+
+    std::string getProgramName() { return this->programName; }
+
+    std::string getDescription() { return this->description; }
 
     void printHelp();
 
   private:
     int argc;
     char **argv;
+
+    std::string programName;
+    std::string description = "";
 };
 
 } // namespace argparser
