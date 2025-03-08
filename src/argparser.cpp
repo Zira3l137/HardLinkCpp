@@ -3,13 +3,6 @@
 #include <cstring>
 #include <iostream>
 
-std::map<argparser::ArgType, std::string> argumentType = {
-    {argparser::ArgType::Str, "STRING"},
-    {argparser::ArgType::Int, "INT"},
-    {argparser::ArgType::Bool, "BOOL"},
-    {argparser::ArgType::Flag, "FLAG"},
-};
-
 argparser::ArgParser::ArgParser(int argc, char *argv[])
     : argc(argc), argv(argv) {
     this->addArg("--help", "-h", "Show this help message.", ArgType::Flag);
@@ -127,7 +120,7 @@ void argparser::ArgParser::printHelp() {
     for (const auto &arg : this->args) {
         std::cout << YELLOW << "\n"
                   << arg->longName << ", " << arg->shortName << GREEN << " - "
-                  << argumentType[arg->type] << " \n\t" << RESET
-                  << arg->description << std::endl;
+                  << arg->type << " \n\t" << RESET << arg->description
+                  << std::endl;
     }
 }

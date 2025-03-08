@@ -1,54 +1,64 @@
 #pragma once
 
-// ANSI color codes
-#define RESET "\033[0m"
-#define BLACK "\033[30m"
-#define RED "\033[31m"
-#define GREEN "\033[32m"
-#define YELLOW "\033[33m"
-#define BLUE "\033[34m"
-#define MAGENTA "\033[35m"
-#define CYAN "\033[36m"
-#define WHITE "\033[37m"
-#define BOLDBLACK "\033[90m"   /* Black */
-#define BOLDRED "\033[91m"     /* Red */
-#define BOLDGREEN "\033[92m"   /* Green */
-#define BOLDYELLOW "\033[93m"  /* Yellow */
-#define BOLDBLUE "\033[94m"    /* Blue */
-#define BOLDMAGENTA "\033[95m" /* Magenta */
-#define BOLDCYAN "\033[96m"    /* Cyan */
-#define BOLDWHITE "\033[97m"   /* White */
-
 #include <iostream>
+#include <map>
+#include <mutex>
 
 namespace logger {
 
+// ANSI color codes
+constexpr const char *RESET = "\033[0m";
+constexpr const char *BLACK = "\033[30m";
+constexpr const char *RED = "\033[31m";
+constexpr const char *GREEN = "\033[32m";
+constexpr const char *YELLOW = "\033[33m";
+constexpr const char *BLUE = "\033[34m";
+constexpr const char *MAGENTA = "\033[35m";
+constexpr const char *CYAN = "\033[36m";
+constexpr const char *WHITE = "\033[37m";
+constexpr const char *BOLDBLACK = "\033[90m";
+constexpr const char *BOLDRED = "\033[91m";
+constexpr const char *BOLDGREEN = "\033[92m";
+constexpr const char *BOLDYELLOW = "\033[93m";
+constexpr const char *BOLDBLUE = "\033[94m";
+constexpr const char *BOLDMAGENTA = "\033[95m";
+constexpr const char *BOLDCYAN = "\033[96m";
+constexpr const char *BOLDWHITE = "\033[97m";
+
 enum LogLevel { DEBUG, INFO, WARN, ERROR, NONE };
 
+inline std::ostream &operator<<(std::ostream &os, const LogLevel &level) {
+    switch (level) {
+    case LogLevel::DEBUG:
+        os << "DEBUG";
+        break;
+    case LogLevel::INFO:
+        os << "INFO";
+        break;
+    case LogLevel::WARN:
+        os << "WARN";
+        break;
+    case LogLevel::ERROR:
+        os << "ERROR";
+        break;
+    case LogLevel::NONE:
+        os << "NONE";
+        break;
+    }
+    return os;
+}
+
 class Logger {
+    std::mutex loggerMutex;
 
   public:
     static Logger &getInstance();
 
     void setLevel(LogLevel level);
+    LogLevel getLevel();
 
-    void debug(const char *file, const int line, const char *func,
-               const std::string &message);
-    void info(const char *file, const int line, const char *func,
-              const std::string &message);
-    void warn(const char *file, const int line, const char *func,
-              const std::string &message);
-    void error(const char *file, const int line, const char *func,
-               const std::string &message);
-
-    void debug(const char *file, const int line, const char *func,
-               const char *message);
-    void info(const char *file, const int line, const char *func,
-              const char *message);
-    void warn(const char *file, const int line, const char *func,
-              const char *message);
-    void error(const char *file, const int line, const char *func,
-               const char *message);
+    void log(const std::string &file, const int &line, const std::string &func,
+             const std::string &message);
 
   private:
     LogLevel level;
@@ -63,15 +73,27 @@ class Logger {
 #define LOGGER_SET(level) logger::Logger::getInstance().setLevel(level)
 
 #define LOG_DEBUG(message)                                                     \
-    logger::Logger::getInstance().debug(__FILE__, __LINE__, __func__, message)
+    if (logger::Logger::getInstance().getLevel() <= logger::LogLevel::DEBUG) { \
+        logger::Logger::getInstance().log(__FILE__, __LINE__, __func__,        \
+                                          message);                            \
+    }
 
 #define LOG_INFO(message)                                                      \
-    logger::Logger::getInstance().info(__FILE__, __LINE__, __func__, message)
+    if (logger::Logger::getInstance().getLevel() <= logger::LogLevel::INFO) {  \
+        logger::Logger::getInstance().log(__FILE__, __LINE__, __func__,        \
+                                          message);                            \
+    }
 
 #define LOG_WARN(message)                                                      \
-    logger::Logger::getInstance().warn(__FILE__, __LINE__, __func__, message)
+    if (logger::Logger::getInstance().getLevel() <= logger::LogLevel::WARN) {  \
+        logger::Logger::getInstance().log(__FILE__, __LINE__, __func__,        \
+                                          message);                            \
+    }
 
 #define LOG_ERROR(message)                                                     \
-    logger::Logger::getInstance().error(__FILE__, __LINE__, __func__, message)
+    if (logger::Logger::getInstance().getLevel() <= logger::LogLevel::ERROR) { \
+        logger::Logger::getInstance().log(__FILE__, __LINE__, __func__,        \
+                                          message);                            \
+    }
 
 } // namespace logger
