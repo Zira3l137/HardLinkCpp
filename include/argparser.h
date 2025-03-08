@@ -1,8 +1,10 @@
 #pragma once
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
+#include <variant>
 
 namespace argparser {
 
@@ -30,11 +32,17 @@ inline std::ostream &operator<<(std::ostream &os, const ArgType &type) {
     return os;
 }
 
+using ArgValue = std::variant<std::string, int, bool>;
+using OptionalValue = std::optional<ArgValue>;
+
 struct CmdArg {
     std::string longName;
     std::string shortName;
     std::string description;
     ArgType type;
+    ArgValue value;
+
+    template <typename T> T &get() { return std::get<T>(value); }
 };
 
 class ArgParser {
@@ -45,10 +53,14 @@ class ArgParser {
     ~ArgParser() = default;
 
     void addArg(const std::string longName, const std::string shortName,
+                const ArgValue defaultValue, const std::string description = "",
+                const ArgType type = ArgType::Str);
+
+    void addArg(const std::string longName, const std::string shortName,
                 const std::string description = "",
                 const ArgType type = ArgType::Str);
 
-    std::unordered_map<std::string, std::string> parse();
+    void parse();
 
     void setProgramName(const std::string name) { this->programName = name; }
 

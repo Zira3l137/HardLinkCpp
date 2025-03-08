@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
     argparser::ArgParser parser(argc, argv);
 
     parser.addArg(
-        "--debug", "-d",
+        "--debug", "-d", 2,
         "Set log level. [0-4] - DEBUG, INFO, WARN, ERROR, NONE. Optional. "
         "Defaults to 0.",
         argparser::ArgType::Int);
@@ -26,7 +26,8 @@ int main(int argc, char *argv[]) {
                   "linking. Optional.",
                   argparser::ArgType::Str);
 
-    auto cmdArgs = parser.parse();
+    parser.parse();
+    auto &cmdArgs = parser.args;
 
     std::string sourceDir, destinationDir;
     std::string ignorePattern = "";
@@ -34,13 +35,13 @@ int main(int argc, char *argv[]) {
     auto debug = cmdArgs.find("--debug");
     if (debug != cmdArgs.end()) {
         logger::LogLevel level =
-            static_cast<logger::LogLevel>(std::stoi(debug->second));
+            static_cast<logger::LogLevel>(debug->second->get<int>());
         LOGGER_SET(level);
     }
 
     auto help = cmdArgs.find("--help");
     if (help != cmdArgs.end()) {
-        if (std::string(help->second) == "on") {
+        if (help->second->get<bool>()) {
             parser.printHelp();
             return 0;
         }
@@ -48,21 +49,23 @@ int main(int argc, char *argv[]) {
 
     auto source = cmdArgs.find("--source");
     if (source != cmdArgs.end()) {
-        fs::path absolutePath = fs::absolute(source->second);
+        fs::path absolutePath =
+            fs::absolute(source->second->get<std::string>());
         sourceDir = absolutePath.string();
         LOG_INFO("Linking from: " + sourceDir);
     }
 
     auto output = cmdArgs.find("--output");
     if (output != cmdArgs.end()) {
-        fs::path absolutePath = fs::absolute(output->second);
+        fs::path absolutePath =
+            fs::absolute(output->second->get<std::string>());
         destinationDir = absolutePath.string();
         LOG_INFO("To: " + sourceDir);
     }
 
     auto ignoreKey = cmdArgs.find("--ignore");
     if (ignoreKey != cmdArgs.end()) {
-        ignorePattern = ignoreKey->second;
+        ignorePattern = ignoreKey->second->get<std::string>();
         LOG_INFO("Ignoring files matching: " + ignorePattern);
     }
 

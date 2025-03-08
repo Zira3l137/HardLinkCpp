@@ -20,7 +20,8 @@ argparser::ArgParser::ArgParser(int argc, char *argv[])
 void argparser::ArgParser::addArg(const std::string longName,
                                   const std::string shortName,
                                   const std::string description,
-                                  const ArgType type) {
+                                  const argparser::ArgType type) {
+
     for (const auto &pair : this->args) {
         if (pair.second->longName == longName ||
             pair.second->shortName == shortName) {
@@ -35,6 +36,19 @@ void argparser::ArgParser::addArg(const std::string longName,
     arg->shortName = shortName;
     arg->type = type;
 
+    switch (type) {
+    case ArgType::Str:
+        arg->value = std::string("");
+        break;
+    case ArgType::Int:
+        arg->value = int(0);
+        break;
+    case ArgType::Bool:
+    case ArgType::Flag:
+        arg->value = bool(false);
+        break;
+    }
+
     if (description != "") {
         arg->description = description;
     }
@@ -42,15 +56,65 @@ void argparser::ArgParser::addArg(const std::string longName,
     this->args[longName] = std::move(arg);
 }
 
-std::unordered_map<std::string, std::string> argparser::ArgParser::parse() {
-    std::unordered_map<std::string, std::string> found;
+void argparser::ArgParser::addArg(const std::string longName,
+                                  const std::string shortName,
+                                  const argparser::ArgValue defaultValue,
+                                  const std::string description,
+                                  const argparser::ArgType type) {
 
     for (const auto &pair : this->args) {
-        if (pair.second->type == ArgType::Flag) {
-            found[pair.second->longName] = "off";
+        if (pair.second->longName == longName ||
+            pair.second->shortName == shortName) {
+            throw std::invalid_argument("Duplicate argument name: " +
+                                        pair.second->longName);
         }
     }
 
+    std::unique_ptr<CmdArg> arg = std::make_unique<CmdArg>();
+
+    arg->longName = longName;
+    arg->shortName = shortName;
+    arg->type = type;
+
+    switch (type) {
+    case ArgType::Str:
+        try {
+            arg->value = std::get<std::string>(defaultValue);
+            break;
+        } catch (const std::bad_variant_access &e) {
+            throw std::invalid_argument("Invalid default value for a string "
+                                        "argument: " +
+                                        longName);
+        }
+    case ArgType::Int:
+        try {
+            arg->value = std::get<int>(defaultValue);
+            break;
+        } catch (const std::bad_variant_access &e) {
+            throw std::invalid_argument("Invalid default value for a numeric "
+                                        "argument: " +
+                                        longName);
+        }
+    case ArgType::Bool:
+    case ArgType::Flag:
+        try {
+            arg->value = std::get<bool>(defaultValue);
+            break;
+        } catch (const std::bad_variant_access &e) {
+            throw std::invalid_argument("Invalid default value for a boolean "
+                                        "argument: " +
+                                        longName);
+        }
+    }
+
+    if (description != "") {
+        arg->description = description;
+    }
+
+    this->args[longName] = std::move(arg);
+}
+
+void argparser::ArgParser::parse() {
     // CMD args iteration begins
     for (int i = 1; i < this->argc; i++) {
         if (this->argv[i] == nullptr) {
@@ -66,11 +130,11 @@ std::unordered_map<std::string, std::string> argparser::ArgParser::parse() {
                 continue;
             }
 
-            // Flag switch ends
+            // Flag switch begins
             switch (pair.second->type) {
 
             case ArgType::Flag: {
-                found[pair.second->longName] = "on";
+                pair.second->value = true;
                 break;
             }
 
@@ -92,8 +156,8 @@ std::unordered_map<std::string, std::string> argparser::ArgParser::parse() {
                                                 pair.second->longName);
                 }
 
-                found[pair.second->longName] =
-                    (argValue == "true" || argValue == "1") ? "on" : "off";
+                pair.second->value =
+                    (argValue == "true" || argValue == "1") ? true : false;
                 i++;
                 break;
             }
@@ -106,7 +170,7 @@ std::unordered_map<std::string, std::string> argparser::ArgParser::parse() {
                                                 pair.second->longName);
                 }
 
-                found[pair.second->longName] = this->argv[i + 1];
+                pair.second->value = this->argv[i + 1];
                 i++;
                 break;
             }
@@ -128,7 +192,7 @@ std::unordered_map<std::string, std::string> argparser::ArgParser::parse() {
                                                 pair.second->longName);
                 }
 
-                found[pair.second->longName] = this->argv[i + 1];
+                pair.second->value = std::stoi(this->argv[i + 1]);
                 i++;
                 break;
             }
@@ -138,7 +202,6 @@ std::unordered_map<std::string, std::string> argparser::ArgParser::parse() {
         } // Flag iteration ends
 
     } // CMD args iteration ends
-    return found;
 }
 
 void argparser::ArgParser::printHelp() {
