@@ -28,6 +28,14 @@ void logger::Logger::info(const char *file, const int line, const char *func,
     }
 }
 
+void logger::Logger::warn(const char *file, const int line, const char *func,
+                          const std::string &message) {
+    if (this->level <= logger::LogLevel::WARN) {
+        std::cout << BOLDYELLOW << "[WARNING]-[" << file << ", at line " << line
+                  << "]->[" << func << "]: " << RESET << message << std::endl;
+    }
+}
+
 void logger::Logger::error(const char *file, const int line, const char *func,
                            const std::string &message) {
     if (this->level <= logger::LogLevel::ERROR) {
@@ -48,6 +56,14 @@ void logger::Logger::info(const char *file, const int line, const char *func,
                           const char *message) {
     if (this->level <= logger::LogLevel::INFO) {
         std::cout << BOLDGREEN << "[INFO]-[" << file << ", at line " << line
+                  << "]->[" << func << "]: " << RESET << message << std::endl;
+    }
+}
+
+void logger::Logger::warn(const char *file, const int line, const char *func,
+                          const char *message) {
+    if (this->level <= logger::LogLevel::WARN) {
+        std::cout << BOLDYELLOW << "[WARNING]-[" << file << ", at line " << line
                   << "]->[" << func << "]: " << RESET << message << std::endl;
     }
 }

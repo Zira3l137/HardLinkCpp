@@ -23,7 +23,7 @@
 
 namespace logger {
 
-enum LogLevel { DEBUG, INFO, ERROR, NONE };
+enum LogLevel { DEBUG, INFO, WARN, ERROR, NONE };
 
 class Logger {
 
@@ -32,18 +32,22 @@ class Logger {
 
     void setLevel(LogLevel level);
 
+    void debug(const char *file, const int line, const char *func,
+               const std::string &message);
     void info(const char *file, const int line, const char *func,
+              const std::string &message);
+    void warn(const char *file, const int line, const char *func,
               const std::string &message);
     void error(const char *file, const int line, const char *func,
                const std::string &message);
-    void debug(const char *file, const int line, const char *func,
-               const std::string &message);
 
+    void debug(const char *file, const int line, const char *func,
+               const char *message);
     void info(const char *file, const int line, const char *func,
               const char *message);
+    void warn(const char *file, const int line, const char *func,
+              const char *message);
     void error(const char *file, const int line, const char *func,
-               const char *message);
-    void debug(const char *file, const int line, const char *func,
                const char *message);
 
   private:
@@ -53,16 +57,19 @@ class Logger {
     Logger &operator=(const Logger &) = delete; // Disable copy assignment
 
     static Logger *instance; // Singleton
-    Logger() : level(logger::LogLevel::ERROR) {}
+    Logger() : level(logger::LogLevel::WARN) {}
 };
 
 #define LOGGER_SET(level) logger::Logger::getInstance().setLevel(level)
 
+#define LOG_DEBUG(message)                                                     \
+    logger::Logger::getInstance().debug(__FILE__, __LINE__, __func__, message)
+
 #define LOG_INFO(message)                                                      \
     logger::Logger::getInstance().info(__FILE__, __LINE__, __func__, message)
 
-#define LOG_DEBUG(message)                                                     \
-    logger::Logger::getInstance().debug(__FILE__, __LINE__, __func__, message)
+#define LOG_WARN(message)                                                      \
+    logger::Logger::getInstance().warn(__FILE__, __LINE__, __func__, message)
 
 #define LOG_ERROR(message)                                                     \
     logger::Logger::getInstance().error(__FILE__, __LINE__, __func__, message)

@@ -8,10 +8,11 @@ namespace fs = std::filesystem;
 int main(int argc, char *argv[]) {
     argparser::ArgParser parser(argc, argv);
 
-    parser.addArg("--debug", "-d",
-                  "Set log level. [0-3] - DEBUG, INFO, WARN, ERROR. Optional. "
-                  "Defaults to 0.",
-                  argparser::ArgType::Int);
+    parser.addArg(
+        "--debug", "-d",
+        "Set log level. [0-4] - DEBUG, INFO, WARN, ERROR, NONE. Optional. "
+        "Defaults to 0.",
+        argparser::ArgType::Int);
 
     parser.addArg("--source", "-s", "Source directory to link from. Required.",
                   argparser::ArgType::Str);

@@ -38,8 +38,8 @@ bool linker::createLink(const std::string &WHAT, const std::string &WHERE,
     LOG_DEBUG("Linking " + sourcePath.string() + " to " + linkPath.string());
 
     if (fs::exists(linkPath)) {
-        LOG_ERROR("File with the same name already exists: " +
-                  linkPath.string());
+        LOG_WARN("File with the same name already exists: " +
+                 linkPath.string());
         return false;
     }
 
@@ -47,7 +47,7 @@ bool linker::createLink(const std::string &WHAT, const std::string &WHERE,
     if (linkExists == 0) {
         LOG_DEBUG("File is already linked: " + linkPath.string());
         if (!exist_ok) {
-            LOG_ERROR("File already linked: " + linkPath.string());
+            LOG_WARN("File already linked: " + linkPath.string());
             return false; // Already linked, throw error
         } else {
             return true; // Already linked do nothing
