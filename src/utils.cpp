@@ -1,4 +1,5 @@
 #include "utils.h"
+#include <algorithm>
 #include <charconv>
 #include <sstream>
 
@@ -40,14 +41,14 @@ bool utils::str::isNumber(const std::string &s) {
     return false; // Neither integer nor double
 }
 
-std::string utils::str::toLower(const std::string &s) {
-    std::string copy(s);
+std::string utils::str::toLower(std::string s) {
+    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+    return s;
+}
 
-    for (int i = 0; i < (int)copy.length(); i++) {
-        copy[i] = tolower(copy[i]);
-    }
-
-    return copy;
+std::string utils::str::toUpper(std::string s) {
+    std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+    return s;
 }
 
 std::vector<std::string> *utils::str::split(const std::string &s, char delim) {

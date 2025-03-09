@@ -7,86 +7,126 @@
 
 namespace argparser {
 
-constexpr const char *YELLOW = "\033[33m";
-constexpr const char *GREEN = "\033[32m";
-constexpr const char *RESET = "\033[0m";
+enum Type { Str, Int, Bool, Double };
+using string = std::string;
 
-enum ArgType { Str, Int, Bool, Flag, Double };
-
-inline std::ostream &operator<<(std::ostream &os, const ArgType &type) {
+inline std::ostream &operator<<(std::ostream &os, const Type &type) {
     switch (type) {
-    case ArgType::Str:
+    case Type::Str:
         os << "STRING";
         break;
-    case ArgType::Int:
+    case Type::Int:
         os << "INT";
         break;
-    case ArgType::Bool:
+    case Type::Bool:
         os << "BOOL";
         break;
-    case ArgType::Flag:
-        os << "FLAG";
-        break;
-    case ArgType::Double:
+    case Type::Double:
         os << "DOUBLE";
         break;
     }
     return os;
 }
 
-using ArgValue = std::variant<std::string, int, bool, double>;
+using Value = std::variant<string, int, bool, double>;
 
-struct CmdArg {
+struct Arg {
     std::string longName;
     std::string shortName;
-    std::string description;
-    ArgType type;
-    ArgValue value;
-
-    template <typename T> T &get() { return std::get<T>(value); }
+    std::string desc;
+    Type type;
+    Value value;
+    bool toggle;
 };
+
+struct PosArg {
+    string name;
+    string desc;
+    Type type;
+    Value value;
+};
+
+using ArgPtr = std::variant<std::unique_ptr<Arg>, std::unique_ptr<PosArg>>;
+
+using OptLookup = std::unordered_map<std::string, Arg *>;
+using PosLookup = std::unordered_map<unsigned short, PosArg *>;
+using Args = std::unordered_map<std::string, ArgPtr>;
+using ParsedArgs = std::unordered_map<std::string, Value>;
 
 class ArgParser {
   public:
-    std::unordered_map<std::string, std::unique_ptr<CmdArg>> args;
-
     ArgParser(int argc, char *argv[]);
     ~ArgParser() = default;
 
-    void addArg(const std::string longName, const std::string shortName,
-                const ArgValue defaultValue, const std::string description = "",
-                const ArgType type = ArgType::Str);
+    ParsedArgs parse();
+    void printHelp() const;
 
-    void addArg(const std::string longName, const std::string shortName,
-                const std::string description = "",
-                const ArgType type = ArgType::Str);
+    // Positionals
 
-    void parse();
+    void addPosArg(const string &name, const Value &defaultValue,
+                   const string &desc = "");
 
-    void setProgramName(const std::string name) { this->programName = name; }
+    void addPosArg(const string &name, const Type &type,
+                   const string &desc = "");
 
-    void setDescription(const std::string description) {
+    // Optionals
+
+    void addOptArg(const string &longName, const string &shortName,
+                   const Value &defaultValue, const string &desc = "");
+
+    void addOptArg(const string &longName, const string &shortName,
+                   const Type &type, const string &desc = "");
+
+    void addSwitch(const string &longName, const string &shortName,
+                   const string &desc = "");
+
+    // Setters and Getters
+
+    void setDescription(const string &description) {
         this->description = description;
     }
+    void setProgramName(const string &programName) {
+        this->programName = programName;
+    }
 
-    std::string getProgramName() { return this->programName; }
-
-    std::string getDescription() { return this->description; }
-
-    void printHelp();
+    string getDescription() const { return this->description; }
+    string getProgramName() const { return this->programName; }
 
   private:
     int argc;
     char **argv;
 
-    std::string programName;
-    std::string description = "";
+    int positionalCounter = 0;
+
+    string programName;
+    string description;
+
+    Args args;
+    OptLookup optionals;
+    PosLookup positionals;
+
+    Value parseArgValue(const string &valueString, const argparser::Type &type);
+    PosArg *parsePosArg(const int &index, const string &argName);
+    Arg *parseArg(const int &index, const string &argName);
 };
 
 namespace misc {
 
-bool isNumber(const std::string &s);
-std::string toLower(const std::string &s);
+constexpr const char *GREEN = "\033[32m";
+constexpr const char *RED = "\033[31m";
+constexpr const char *YELLOW = "\033[33m";
+constexpr const char *RESET = "\033[0m";
+
+#define THROW_ERROR(message)                                                   \
+    std::cout << argparser::misc::RED << "Error: " << argparser::misc::RESET   \
+              << message << "\n";                                              \
+    throw std::runtime_error(message);
+
+#define PRINT(message)                                                         \
+    std::cout << __FILE__ << ":" << __LINE__ << ": " << message << "\n";
+
+bool isNumber(const string &s);
+string toLower(string s);
 
 } // namespace misc
 

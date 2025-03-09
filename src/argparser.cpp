@@ -1,7 +1,9 @@
 #include "argparser.h"
+#include <algorithm>
 #include <charconv>
-#include <iostream>
+#include <memory>
 #include <unordered_map>
+#include <vector>
 
 #ifdef _WIN32
 #define PATH_SEPARATOR "\\"
@@ -9,291 +11,348 @@
 #define PATH_SEPARATOR "/"
 #endif
 
-bool argparser::misc::isNumber(const std::string &s) {
-    if (s.empty()) {
+using string = std::string;
+
+std::unordered_map<int, const argparser::Type> typeMap = {
+    {0, argparser::Type::Str},
+    {1, argparser::Type::Int},
+    {2, argparser::Type::Bool},
+    {3, argparser::Type::Double},
+};
+
+std::unordered_map<const argparser::Type, argparser::Value> typeDefaults = {
+    {argparser::Type::Str, string("")},
+    {argparser::Type::Int, 0},
+    {argparser::Type::Bool, false},
+    {argparser::Type::Double, 0.0},
+};
+
+bool argparser::misc::isNumber(const string &s) {
+    if (s.empty())
         return false;
-    }
 
     int int_val;
-    const char *int_first = s.data();
-    const char *int_last = int_first + s.size();
-    if (std::from_chars(int_first, int_last, int_val).ec == std::errc()) {
-        return true; // Successfully parsed as an integer
-    }
+    const char *begin = s.data();
+    const char *end = begin + s.size();
+
+    auto [ptr, ec] = std::from_chars(begin, end, int_val);
+    if (ec == std::errc())
+        return true;
 
     double double_val;
-    const char *double_first = s.data();
-    const char *double_last = double_first + s.size();
-    if (std::from_chars(double_first, double_last, double_val).ec ==
-        std::errc()) {
-        return true; // Successfully parsed as a double
-    }
-
-    return false; // Neither integer nor double
+    auto [dptr, dec] = std::from_chars(begin, end, double_val);
+    return (dec == std::errc());
 }
 
-std::string argparser::misc::toLower(const std::string &s) {
-    std::string copy(s);
-
-    for (int i = 0; i < (int)copy.length(); i++) {
-        copy[i] = tolower(copy[i]);
-    }
-
-    return copy;
+string argparser::misc::toLower(string s) {
+    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+    return s;
 }
 
 argparser::ArgParser::ArgParser(int argc, char *argv[])
     : argc(argc), argv(argv) {
-    std::string executable(argv[0]);
+    string executable(argv[0]);
     this->programName =
         executable.substr(executable.find_last_of(PATH_SEPARATOR) + 1);
-    this->addArg("--help", "-h", "Show this help message.", ArgType::Flag);
+    this->addSwitch("--help", "-h", "Show this help message.");
 }
 
-void argparser::ArgParser::addArg(const std::string longName,
-                                  const std::string shortName,
-                                  const std::string description,
-                                  const argparser::ArgType type) {
+void argparser::ArgParser::addPosArg(const string &name,
+                                     const argparser::Value &defaultValue,
+                                     const string &desc) {
 
-    for (const auto &pair : this->args) {
-        if (pair.second->longName == longName ||
-            pair.second->shortName == shortName) {
-            throw std::invalid_argument("Duplicate argument name: " +
-                                        pair.second->longName);
-        }
+    string normalized_name = argparser::misc::toLower(name);
+
+    if (name.empty()) {
+        THROW_ERROR("Positional argument name cannot be empty.");
+    }
+    if (this->args.find(normalized_name) != this->args.end()) {
+        THROW_ERROR("Positional argument " + name + " already exists.");
     }
 
-    std::unique_ptr<CmdArg> arg = std::make_unique<CmdArg>();
+    auto newArg = std::make_unique<argparser::PosArg>();
+    newArg->name = normalized_name;
+    newArg->desc = desc;
+    newArg->value = defaultValue;
+    newArg->type = typeMap[defaultValue.index()];
 
-    arg->longName = longName;
-    arg->shortName = shortName;
-    arg->type = type;
+    this->args[normalized_name] = std::move(newArg);
+    this->positionals[this->positionalCounter++] =
+        std::get<std::unique_ptr<argparser::PosArg>>(
+            (this->args[normalized_name]))
+            .get();
+}
+
+void argparser::ArgParser::addPosArg(const string &name,
+                                     const argparser::Type &type,
+                                     const string &desc) {
+
+    string normalized_name = argparser::misc::toLower(name);
+
+    if (name.empty()) {
+        THROW_ERROR("Positional argument name cannot be empty.");
+    }
+    if (this->args.find(normalized_name) != this->args.end()) {
+        THROW_ERROR("Positional argument " + name + " already exists.");
+    }
+
+    auto newArg = std::make_unique<argparser::PosArg>();
+    newArg->name = normalized_name;
+    newArg->desc = desc;
+    newArg->type = type;
+    newArg->value = typeDefaults[type];
+
+    this->args[normalized_name] = std::move(newArg);
+
+    this->positionals[this->positionalCounter++] =
+        std::get<std::unique_ptr<argparser::PosArg>>(
+            (this->args[normalized_name]))
+            .get();
+}
+
+void argparser::ArgParser::addOptArg(const string &longName,
+                                     const string &shortName,
+                                     const Value &defaultValue,
+                                     const string &desc) {
+
+    string normalized_lname = argparser::misc::toLower(longName);
+    string normalized_sname = argparser::misc::toLower(shortName);
+
+    if (longName.empty()) {
+        THROW_ERROR("Option argument name cannot be empty.");
+    }
+    if (shortName.empty()) {
+        THROW_ERROR("Option argument short name cannot be empty.");
+    }
+    if (this->args.find(normalized_lname) != this->args.end()) {
+        THROW_ERROR("Option argument " + longName + " already exists.");
+    }
+
+    auto newArg = std::make_unique<argparser::Arg>();
+    newArg->longName = normalized_lname;
+    newArg->shortName = normalized_sname;
+    newArg->desc = desc;
+    newArg->value = defaultValue;
+    newArg->type = typeMap[defaultValue.index()];
+
+    this->args[normalized_lname] = std::move(newArg);
+
+    this->optionals[normalized_lname] =
+        std::get<std::unique_ptr<argparser::Arg>>(this->args[normalized_lname])
+            .get();
+
+    this->optionals[normalized_sname] =
+        std::get<std::unique_ptr<argparser::Arg>>(this->args[normalized_lname])
+            .get();
+}
+
+void argparser::ArgParser::addOptArg(const string &longName,
+                                     const string &shortName,
+                                     const argparser::Type &type,
+                                     const string &desc) {
+
+    string normalized_lname = argparser::misc::toLower(longName);
+    string normalized_sname = argparser::misc::toLower(shortName);
+
+    if (longName.empty()) {
+        THROW_ERROR("Option argument name cannot be empty.");
+    }
+    if (shortName.empty()) {
+        THROW_ERROR("Option argument short name cannot be empty.");
+    }
+    if (this->args.find(normalized_lname) != this->args.end()) {
+        THROW_ERROR("Option argument " + longName + " already exists.");
+    }
+
+    auto newArg = std::make_unique<argparser::Arg>();
+    newArg->longName = longName;
+    newArg->shortName = shortName;
+    newArg->desc = desc;
+    newArg->type = type;
+    newArg->value = typeDefaults[type];
+
+    this->args[normalized_lname] = std::move(newArg);
+
+    this->optionals[normalized_lname] =
+        std::get<std::unique_ptr<argparser::Arg>>(this->args[normalized_lname])
+            .get();
+
+    this->optionals[normalized_sname] =
+        std::get<std::unique_ptr<argparser::Arg>>(this->args[normalized_lname])
+            .get();
+}
+
+void argparser::ArgParser::addSwitch(const string &longName,
+                                     const string &shortName,
+                                     const string &desc) {
+
+    string normalized_lname = argparser::misc::toLower(longName);
+    string normalized_sname = argparser::misc::toLower(shortName);
+
+    if (longName.empty()) {
+        THROW_ERROR("Option argument name cannot be empty.");
+    }
+    if (shortName.empty()) {
+        THROW_ERROR("Option argument short name cannot be empty.");
+    }
+    if (this->args.find(normalized_lname) != this->args.end()) {
+        THROW_ERROR("Option argument " + longName + " already exists.");
+    }
+
+    auto newArg = std::make_unique<argparser::Arg>();
+    newArg->longName = longName;
+    newArg->shortName = shortName;
+    newArg->desc = desc;
+    newArg->type = argparser::Type::Bool;
+    newArg->value = false;
+    newArg->toggle = true;
+
+    this->args[normalized_lname] = std::move(newArg);
+
+    this->optionals[normalized_lname] =
+        std::get<std::unique_ptr<argparser::Arg>>(this->args[normalized_lname])
+            .get();
+
+    this->optionals[normalized_sname] =
+        std::get<std::unique_ptr<argparser::Arg>>(this->args[normalized_lname])
+            .get();
+}
+
+argparser::Value
+argparser::ArgParser::parseArgValue(const string &valueString,
+                                    const argparser::Type &type) {
 
     switch (type) {
-    case argparser::ArgType::Str:
-        arg->value = std::string("");
-        break;
-    case argparser::ArgType::Int:
-        arg->value = int(0);
-        break;
-    case argparser::ArgType::Bool:
-    case argparser::ArgType::Flag:
-        arg->value = bool(false);
-        break;
-    case argparser::ArgType::Double:
-        arg->value = double(0.0);
-    }
 
-    if (description != "") {
-        arg->description = description;
-    }
+    case argparser::Type::Str:
+        return valueString;
 
-    this->args[longName] = std::move(arg);
+    case argparser::Type::Int:
+        if (!argparser::misc::isNumber(valueString)) {
+            THROW_ERROR("Value " + valueString + " is not an integer.");
+        }
+        return std::stoi(valueString);
+
+    case argparser::Type::Bool:
+        if (valueString != "true" && valueString != "false" &&
+            valueString != "1" && valueString != "0") {
+            THROW_ERROR("Value " + valueString + " is not a boolean.");
+        }
+        return (valueString == "true" || valueString == "1");
+
+    case argparser::Type::Double:
+        if (!argparser::misc::isNumber(valueString)) {
+            THROW_ERROR("Value " + valueString + " is not an integer.");
+        }
+        return std::stod(valueString);
+
+    default:
+        return valueString;
+    }
 }
 
-void argparser::ArgParser::addArg(const std::string longName,
-                                  const std::string shortName,
-                                  const argparser::ArgValue defaultValue,
-                                  const std::string description,
-                                  const argparser::ArgType type) {
+argparser::Arg *argparser::ArgParser::parseArg(const int &index,
+                                               const string &argName) {
+    auto registeredArg = this->optionals.find(argName);
 
-    for (const auto &pair : this->args) {
-        if (pair.second->longName == longName ||
-            pair.second->shortName == shortName) {
-            throw std::invalid_argument("Duplicate argument name: " +
-                                        pair.second->longName);
-        }
+    if (registeredArg == this->optionals.end()) {
+        THROW_ERROR("Optional argument " + argName + " does not exist.");
     }
 
-    std::unique_ptr<CmdArg> arg = std::make_unique<CmdArg>();
-
-    arg->longName = longName;
-    arg->shortName = shortName;
-    arg->type = type;
-
-    switch (type) {
-    case ArgType::Str:
-        try {
-            arg->value = std::get<std::string>(defaultValue);
-            break;
-        } catch (const std::bad_variant_access &e) {
-            throw std::invalid_argument("Invalid default value for a string "
-                                        "argument: " +
-                                        longName);
-        }
-    case ArgType::Int:
-        try {
-            arg->value = std::get<int>(defaultValue);
-            break;
-        } catch (const std::bad_variant_access &e) {
-            throw std::invalid_argument("Invalid default value for a numeric "
-                                        "argument: " +
-                                        longName);
-        }
-    case ArgType::Bool:
-    case ArgType::Flag:
-        try {
-            arg->value = std::get<bool>(defaultValue);
-            break;
-        } catch (const std::bad_variant_access &e) {
-            throw std::invalid_argument("Invalid default value for a boolean "
-                                        "argument: " +
-                                        longName);
-        }
-    case ArgType::Double:
-        try {
-            arg->value = std::get<double>(defaultValue);
-            break;
-        } catch (const std::bad_variant_access &e) {
-            throw std::invalid_argument(
-                "Invalid default value for a floating point numeric"
-                "argument: " +
-                longName);
-        }
+    if ((!registeredArg->second->toggle) && this->argv[index + 1] == nullptr) {
+        THROW_ERROR("Optional argument " + argName + " requires a value.");
     }
 
-    if (description != "") {
-        arg->description = description;
-    }
+    string argValue = this->argv[index + 1];
+    registeredArg->second->value =
+        registeredArg->second->toggle
+            ? true
+            : this->parseArgValue(argValue, registeredArg->second->type);
 
-    this->args[longName] = std::move(arg);
+    return registeredArg->second;
 }
 
-void argparser::ArgParser::parse() {
-    // CMD args iteration begins
+argparser::ParsedArgs argparser::ArgParser::parse() {
+
+    ParsedArgs parsedArgs;
+    int posIndex = 0;
+
     for (int i = 1; i < this->argc; i++) {
-        if (this->argv[i] == nullptr) {
-            continue;
-        }
+        string token = argparser::misc::toLower(this->argv[i]);
 
-        std::string argName(this->argv[i]);
-
-        if (argName == "--help" || argName == "-h") {
+        if (token == "--help" || token == "-h") {
             this->printHelp();
-            exit(0);
+            std::exit(0);
         }
 
-        // Flag iteration begins
-        for (const auto &pair : this->args) {
-            if (pair.second->longName != argName &&
-                pair.second->shortName != argName) {
-                continue;
+        if (token[0] != '-') { // Positional argument
+            if (posIndex >= this->positionalCounter) {
+                THROW_ERROR("Too many positional arguments.");
             }
 
-            // Flag switch begins
-            switch (pair.second->type) {
-
-            case ArgType::Flag: {
-                pair.second->value = true;
-                break;
-            }
-
-            case ArgType::Bool: {
-                if (i + 1 >= this->argc || this->argv[i + 1] == nullptr) {
-                    std::cout << "Missing argument for "
-                              << pair.second->longName << " \n";
-                    throw std::invalid_argument("Missing argument for " +
-                                                pair.second->longName);
-                }
-
-                auto argValue = argparser::misc::toLower(this->argv[i + 1]);
-                if (argValue != "false" && argValue != "true" &&
-                    argValue != "0" && argValue != "1") {
-                    std::cout << "Provided argument is not a valid bool "
-                              << pair.second->longName << " \n";
-                    throw std::invalid_argument("Provided argument is not a "
-                                                "valid bool " +
-                                                pair.second->longName);
-                }
-
-                pair.second->value =
-                    (argValue == "true" || argValue == "1") ? true : false;
+            PosArg *argPtr = this->positionals[posIndex++];
+            argPtr->value = this->parseArgValue(token, argPtr->type);
+            parsedArgs[argPtr->name] = argPtr->value;
+        } else { // Optional argument
+            Arg *argPtr = this->parseArg(i, token);
+            parsedArgs[argPtr->longName.substr(2)] = argPtr->value;
+            if (!argPtr->toggle)
                 i++;
-                break;
-            }
+        }
+    }
 
-            case ArgType::Str: {
-                if (i + 1 >= this->argc || this->argv[i + 1] == nullptr) {
-                    std::cout << "Missing argument for "
-                              << pair.second->longName << " \n";
-                    throw std::invalid_argument("Missing argument for " +
-                                                pair.second->longName);
-                }
-                pair.second->value = this->argv[i + 1];
-                i++;
-                break;
-            }
+    for (const auto &entry : this->optionals) {
+        std::string key = entry.first.substr(2);
+        if (parsedArgs.find(key) == parsedArgs.end()) {
+            parsedArgs[key] = entry.second->value;
+        }
+    }
 
-            case ArgType::Int: {
-                if (i + 1 >= this->argc || this->argv[i + 1] == nullptr ||
-                    std::string(this->argv[i + 1]) == "") {
-                    std::cout << "Missing argument for "
-                              << pair.second->longName << " \n";
-                    throw std::invalid_argument("Missing argument for " +
-                                                pair.second->longName);
-                }
+    if (posIndex < this->positionalCounter) {
+        THROW_ERROR("Not enough positional arguments.");
+    }
 
-                if (!(argparser::misc::isNumber(this->argv[i + 1]))) {
-                    std::cout << "Provided argument is not a valid number "
-                              << pair.second->longName << " \n";
-                    throw std::invalid_argument("Provided argument is not a "
-                                                "valid number " +
-                                                pair.second->longName);
-                }
-
-                pair.second->value = std::stoi(this->argv[i + 1]);
-                i++;
-                break;
-            }
-
-            case ArgType::Double: {
-                if (i + 1 >= this->argc || this->argv[i + 1] == nullptr ||
-                    std::string(this->argv[i + 1]) == "") {
-                    std::cout << "Missing argument for "
-                              << pair.second->longName << " \n";
-                    throw std::invalid_argument("Missing argument for " +
-                                                pair.second->longName);
-                }
-
-                if (!(argparser::misc::isNumber(this->argv[i + 1]))) {
-                    std::cout << "Provided argument is not a valid number "
-                              << pair.second->longName << " \n";
-                    throw std::invalid_argument("Provided argument is not a "
-                                                "valid number " +
-                                                pair.second->longName);
-                }
-
-                pair.second->value = std::stod(this->argv[i + 1]);
-            }
-            } // Flag switch ends
-
-            break;
-        } // Flag iteration ends
-
-    } // CMD args iteration ends
+    return parsedArgs;
 }
 
-void argparser::ArgParser::printHelp() {
-    std::cout << "\n" << GREEN << this->getProgramName() << RESET << "\n";
+void argparser::ArgParser::printHelp() const {
+    std::cout << "\n"
+              << argparser::misc::GREEN << this->getProgramName()
+              << argparser::misc::RESET << "\n\n";
 
     if (this->getDescription() != "") {
         std::cout << this->description << "\n";
     }
 
-    std::cout << "Usage: " << this->getProgramName() << " ";
-    for (const auto &pair : this->args) {
-        std::cout << pair.second->shortName << "(" << pair.second->longName
-                  << ") ";
-        if (pair.second->type != ArgType::Flag) {
-            std::cout << "[" << pair.second->type << "] ";
-        }
+    std::cout << "Usage: " << argparser::misc::GREEN << this->getProgramName()
+              << " " << argparser::misc::RESET;
+
+    for (const auto &entry : this->positionals) {
+        std::cout << argparser::misc::YELLOW << "<" << entry.second->name
+                  << "> " << argparser::misc::RESET;
+    }
+
+    std::cout << "[OPTIONS]\n";
+    std::cout << "\n\tPositional arguments:\n";
+
+    for (const auto &entry : this->positionals) {
+        std::cout << argparser::misc::YELLOW << "\t\t" << entry.second->name
+                  << argparser::misc::RESET << ":\n\t\t\t" << entry.second->desc
+                  << "\n";
+    }
+
+    std::vector<std::string> alreadyPrinted;
+    std::cout << "\tOptions:\n";
+    for (const auto &entry : this->optionals) {
+
+        if (std::find(alreadyPrinted.begin(), alreadyPrinted.end(),
+                      entry.second->longName) != alreadyPrinted.end())
+            continue;
+
+        alreadyPrinted.push_back(entry.second->longName);
+        std::cout << argparser::misc::YELLOW << "\t\t" << entry.second->longName
+                  << ", " << entry.second->shortName << argparser::misc::RESET
+                  << ":\n\t\t\t" << entry.second->desc << "\n";
     }
     std::cout << "\n";
-
-    for (const auto &pair : this->args) {
-        std::cout << YELLOW << "\n\t" << pair.second->longName << ", "
-                  << pair.second->shortName << GREEN << " - "
-                  << pair.second->type << " \n\t\t" << RESET
-                  << pair.second->description << "\n\t";
-    }
 }

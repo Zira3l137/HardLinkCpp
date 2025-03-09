@@ -8,64 +8,65 @@ namespace fs = std::filesystem;
 int main(int argc, char *argv[]) {
     argparser::ArgParser parser(argc, argv);
 
-    parser.addArg(
+    parser.addPosArg("source", argparser::Type::Str,
+                     "Source directory to link from. Required.");
+
+    parser.addPosArg("output", argparser::Type::Str,
+                     "Destination directory to link to. Required.");
+
+    parser.addOptArg("--ignore", "-i", argparser::Type::Str,
+                     "Ignore pattern to exclude files matching that pattern "
+                     "from linking. Optional.");
+
+    parser.addOptArg(
         "--debug", "-d", 2,
         "Set log level. [0-4] - DEBUG, INFO, WARN, ERROR, NONE. Optional. "
-        "Defaults to 0.",
-        argparser::ArgType::Int);
+        "Defaults to 0.");
 
-    parser.addArg("--source", "-s", "Source directory to link from. Required.",
-                  argparser::ArgType::Str);
-
-    parser.addArg("--output", "-o",
-                  "Destination directory to link to. Required.",
-                  argparser::ArgType::Str);
-
-    parser.addArg("--ignore", "-i",
-                  "Ignore pattern to exclude files matching that pattern from "
-                  "linking. Optional.",
-                  argparser::ArgType::Str);
-
-    parser.parse();
-    auto &cmdArgs = parser.args;
+    auto cmdArgs = parser.parse();
 
     std::string sourceDir, destinationDir;
     std::string ignorePattern = "";
 
-    auto debug = cmdArgs.find("--debug");
-    if (debug != cmdArgs.end()) {
-        logger::LogLevel level =
-            static_cast<logger::LogLevel>(debug->second->get<int>());
-        LOGGER_SET(level);
-    }
+    logger::LogLevel level =
+        static_cast<logger::LogLevel>(std::get<int>(cmdArgs["debug"]));
+    LOGGER_SET(level);
 
-    auto help = cmdArgs.find("--help");
-    if (help != cmdArgs.end()) {
-        if (help->second->get<bool>()) {
+    auto source = std::get<std::string>(cmdArgs["source"]);
+    if (source != "") {
+        fs::path absolutePath;
+
+        try {
+            absolutePath = fs::absolute(source);
+        } catch (fs::filesystem_error &e) {
+            LOG_ERROR("Invalid source directory: " + source);
             parser.printHelp();
-            return 0;
+            return 1;
         }
-    }
 
-    auto source = cmdArgs.find("--source");
-    if (source != cmdArgs.end()) {
-        fs::path absolutePath =
-            fs::absolute(source->second->get<std::string>());
         sourceDir = absolutePath.string();
         LOG_INFO("Linking from: " + sourceDir);
     }
 
-    auto output = cmdArgs.find("--output");
-    if (output != cmdArgs.end()) {
-        fs::path absolutePath =
-            fs::absolute(output->second->get<std::string>());
+    auto output = std::get<std::string>(cmdArgs["output"]);
+    if (output != "") {
+        fs::path absolutePath;
+
+        try {
+            absolutePath = fs::absolute(output);
+        } catch (fs::filesystem_error &e) {
+            LOG_ERROR("Invalid output directory: " + output);
+            parser.printHelp();
+            return 1;
+        }
+
         destinationDir = absolutePath.string();
-        LOG_INFO("To: " + sourceDir);
+        LOG_INFO("To: " + destinationDir);
     }
 
-    auto ignoreKey = cmdArgs.find("--ignore");
-    if (ignoreKey != cmdArgs.end()) {
-        ignorePattern = ignoreKey->second->get<std::string>();
+    auto ignoreKey = std::get<std::string>(cmdArgs["ignore"]);
+    if (ignoreKey != "") {
+        ignorePattern = ignoreKey;
         LOG_INFO("Ignoring files matching: " + ignorePattern);
     }
 
