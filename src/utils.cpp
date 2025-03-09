@@ -17,7 +17,7 @@ bool utils::str::contains(const std::string &haystack,
     return haystack.find(needle) != std::string::npos;
 }
 
-bool utils::str::isallnum(const std::string &s) {
+bool utils::str::isNumber(const std::string &s) {
     if (s.empty()) {
         return false;
     }
