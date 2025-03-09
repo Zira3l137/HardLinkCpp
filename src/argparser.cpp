@@ -9,7 +9,7 @@
 #define PATH_SEPARATOR "/"
 #endif
 
-bool argparser::misc::isallnum(const std::string &s) {
+bool argparser::misc::isNumber(const std::string &s) {
     if (s.empty()) {
         return false;
     }
@@ -168,6 +168,11 @@ void argparser::ArgParser::parse() {
 
         std::string argName(this->argv[i]);
 
+        if (argName == "--help" || argName == "-h") {
+            this->printHelp();
+            exit(0);
+        }
+
         // Flag iteration begins
         for (const auto &pair : this->args) {
             if (pair.second->longName != argName &&
@@ -228,7 +233,7 @@ void argparser::ArgParser::parse() {
                                                 pair.second->longName);
                 }
 
-                if (!(argparser::misc::isallnum(this->argv[i + 1]))) {
+                if (!(argparser::misc::isNumber(this->argv[i + 1]))) {
                     std::cout << "Provided argument is not a valid number "
                               << pair.second->longName << " \n";
                     throw std::invalid_argument("Provided argument is not a "
@@ -250,7 +255,7 @@ void argparser::ArgParser::parse() {
                                                 pair.second->longName);
                 }
 
-                if (!(argparser::misc::isallnum(this->argv[i + 1]))) {
+                if (!(argparser::misc::isNumber(this->argv[i + 1]))) {
                     std::cout << "Provided argument is not a valid number "
                               << pair.second->longName << " \n";
                     throw std::invalid_argument("Provided argument is not a "

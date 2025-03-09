@@ -85,7 +85,7 @@ class ArgParser {
 
 namespace misc {
 
-bool isallnum(const std::string &s);
+bool isNumber(const std::string &s);
 std::string toLower(const std::string &s);
 
 } // namespace misc
