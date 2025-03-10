@@ -1,4 +1,5 @@
-project('hardlinkcpp', 'cpp', default_options: ['cpp_std=c++17'])
+project('hardlinkcpp', 'cpp', version: '1.0.0', default_options: ['cpp_std=c++17'])
+
 executable(
   'hardlinkcpp',
   [
