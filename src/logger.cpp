@@ -40,7 +40,6 @@ std::unordered_map<logger::LogLevel, const char *> LevelColors = {
 logger::Logger::Logger() : level(logger::LogLevel::WARN), writeToFile(false) {
     this->logFilePath =
         getTempDirectory() + PATH_SEPARATOR + __DATE__ + " linker.log";
-    std::cout << this->logFilePath << std::endl;
 }
 
 logger::Logger &logger::Logger::getInstance() {
