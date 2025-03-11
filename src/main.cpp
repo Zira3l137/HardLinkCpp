@@ -31,6 +31,7 @@ int main(int argc, char *argv[]) {
     logger::LogLevel level =
         static_cast<logger::LogLevel>(std::get<int>(cmdArgs["debug"]));
     LOGGER_SET(level);
+    // LOG_WRITE_TO_FILE(true);
 
     auto source = std::get<std::string>(cmdArgs["source"]);
     if (source != "") {

@@ -5,6 +5,15 @@
 
 namespace logger {
 
+#ifdef _WIN32
+#define PATH_SEPARATOR "\\"
+#else
+#define PATH_SEPARATOR "/"
+#endif
+
+std::string getEnv(const std::string &name);
+std::string getTempDirectory();
+
 // ANSI color codes
 constexpr const char *RESET = "\033[0m";
 constexpr const char *BLACK = "\033[30m";
@@ -59,16 +68,30 @@ class Logger {
     void log(LogLevel level, const char *file, const int &line,
              const char *func, const std::string &message);
 
+    void setLogFilePath(const std::string &path);
+    std::string getLogFilePath();
+
+    void setWriteToFile(bool writeToFile);
+
   private:
     LogLevel level;
+    std::string logFilePath;
+    bool writeToFile;
 
     Logger(const Logger &) = delete;            // Disable copy constructor
     Logger &operator=(const Logger &) = delete; // Disable copy assignment
 
-    Logger() : level(LogLevel::WARN) {}
+    Logger();
 };
 
 #define LOGGER_SET(level) logger::Logger::getInstance().setLevel(level)
+
+#define LOGGER_GET_LEVEL() logger::Logger::getInstance().getLevel()
+
+#define LOG_FILE(path) logger::Logger::getInstance().setLogFilePath(path)
+
+#define LOG_WRITE_TO_FILE(condition)                                           \
+    logger::Logger::getInstance().setWriteToFile(condition)
 
 #define LOG_DEBUG(message)                                                     \
     if (logger::Logger::getInstance().getLevel() <= logger::LogLevel::DEBUG) { \
