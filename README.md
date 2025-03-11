@@ -13,7 +13,7 @@ files from a source directory into a destination directory.
 ## Requirements
 
 - C++17 or later.
-- [Meson](https://mesonbuild.com/) build system.
+- Either [Meson](https://mesonbuild.com/) build system or [CMake](https://cmake.org/) build system.
 - A C++ compiler compatible with C++17.
 
 ## Building the Project
@@ -33,6 +33,14 @@ meson setup build
 
 This command sets up the build directory and configures the project using Meson.
 
+Alternatively, you can use CMake:
+
+```bash
+cmake -S . -B build -G **YOUR_CMAKE_GENERATOR**
+```
+
+Specify the CMake generator of your choice, e.g., `Ninja` or `Unix Makefiles` if you like.
+
 3. **Build the Project:**
 
 After configuration, use the following commands to build the project:
@@ -40,6 +48,12 @@ After configuration, use the following commands to build the project:
 ```bash
 cd build
 meson compile
+```
+
+Or for Cmake:
+
+```bash
+cmake --build build
 ```
 
 These commands compile the project and place the executable in the build directory.
@@ -50,13 +64,13 @@ Once built, you can use the executable to create hard links from a source direct
 to a destination directory. The basic syntax is:
 
 ```bash
-HardLinkCpp -s <source_directory> -o <destination_directory> -i <ignore_pattern> -d <debug_mode>
+HardLinkCpp <source_directory> <destination_directory> -i [ignore_pattern] -d [debug_mode]
 ```
 
 Example:
 
 ```bash
-HardLinkCpp -s "C:\path\to\source" -o "C:\path\to\destination" -i "*.txt" -d 0
+HardLinkCpp "C:\path\to\source" "C:\path\to\destination" -i "*.txt" -d 0
 ```
 
 This command will recursively traverse `C:\path\to\source` and create hard links
