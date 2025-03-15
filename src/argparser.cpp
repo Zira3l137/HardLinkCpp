@@ -293,7 +293,9 @@ argparser::ParsedArgs argparser::ArgParser::parse() {
             PosArg *argPtr = this->positionals[posIndex++];
             argPtr->value = this->parseArgValue(token, argPtr->type);
             parsedArgs[argPtr->name] = argPtr->value;
+
         } else { // Optional argument
+
             Arg *argPtr = this->parseArg(i, token);
             parsedArgs[argPtr->longName.substr(2)] = argPtr->value;
             if (!argPtr->toggle)
@@ -327,18 +329,19 @@ void argparser::ArgParser::printHelp() const {
     std::cout << "Usage: " << argparser::misc::GREEN << this->getProgramName()
               << " " << argparser::misc::RESET;
 
-    for (const auto &entry : this->positionals) {
-        std::cout << argparser::misc::YELLOW << "<" << entry.second->name
-                  << "> " << argparser::misc::RESET;
+    for (unsigned short i = 0; i < this->positionalCounter; i++) {
+        std::cout << argparser::misc::YELLOW << "<"
+                  << this->positionals.at(i)->name << "> "
+                  << argparser::misc::RESET;
     }
 
     std::cout << "[OPTIONS]\n";
     std::cout << "\n\tPositional arguments:\n";
 
-    for (const auto &entry : this->positionals) {
-        std::cout << argparser::misc::YELLOW << "\t\t" << entry.second->name
-                  << argparser::misc::RESET << ":\n\t\t\t" << entry.second->desc
-                  << "\n";
+    for (unsigned short i = 0; i < this->positionalCounter; i++) {
+        std::cout << argparser::misc::YELLOW << "\t\t"
+                  << this->positionals.at(i)->name << argparser::misc::RESET
+                  << ":\n\t\t\t" << this->positionals.at(i)->desc << "\n";
     }
 
     std::vector<std::string> alreadyPrinted;

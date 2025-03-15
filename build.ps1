@@ -1,6 +1,4 @@
 Remove-Item hardlinkcpp.exe -ErrorAction Ignore
-Set-Location .\build
-meson compile
+cmake --build build
 
-Copy-Item -Path .\hardlinkcpp.exe -Destination ..\hardlinkcpp.exe
-Set-Location ..
+Copy-Item -Path .\build\hardlinkcpp.exe -Destination .\hardlinkcpp.exe

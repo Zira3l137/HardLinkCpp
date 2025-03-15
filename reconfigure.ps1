@@ -1,6 +1,5 @@
-meson setup build --reconfigure
+Remove-Item .\build -Recurse -ErrorAction SilentlyContinue
+cmake -S . -B .\build -G Ninja
 Remove-Item .\compile_commands.json -ErrorAction SilentlyContinue
-Set-Location .\build
-Copy-Item -Path .\compile_commands.json -Destination ..\compile_commands.json
-Set-Location ..
+Copy-Item -Path .\build\compile_commands.json -Destination .\compile_commands.json
 

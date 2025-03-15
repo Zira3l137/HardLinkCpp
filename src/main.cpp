@@ -8,6 +8,8 @@ namespace fs = std::filesystem;
 int main(int argc, char *argv[]) {
     argparser::ArgParser parser(argc, argv);
 
+    parser.setDescription("Hard link files from one directory to another.");
+
     parser.addPosArg("source", argparser::Type::Str,
                      "Source directory to link from. Required.");
 
