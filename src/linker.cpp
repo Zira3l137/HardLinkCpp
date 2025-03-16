@@ -2,6 +2,7 @@
 #include "logger.h"
 #include "utils.h"
 #include <filesystem>
+#include <thread>
 
 namespace fs = std::filesystem;
 
@@ -79,6 +80,7 @@ void linker::batchCreateLink(const std::string &FROM, const std::string &TO,
 
     try {
         int patternPos = -1;
+        std::vector<std::thread> directoryThreads;
         std::string pattern = "";
 
         // Parse the ignore pattern
@@ -114,9 +116,9 @@ void linker::batchCreateLink(const std::string &FROM, const std::string &TO,
             if (!fs::is_directory(entry.path())) {
                 bool ignored = false;
                 if ((patternPos == 0 && // If entry name starts with pattern
-                     utils::str::startswith(entryName, pattern)) ||
-                    (patternPos == 1 && // Or if entry name ends with pattern
                      utils::str::endswith(entryName, pattern)) ||
+                    (patternPos == 1 && // Or if entry name ends with pattern
+                     utils::str::startswith(entryName, pattern)) ||
                     (patternPos == 2 && // Or If entry name contains pattern
                      utils::str::contains(entryName, pattern))) {
 
@@ -143,9 +145,14 @@ void linker::batchCreateLink(const std::string &FROM, const std::string &TO,
                 }
 
                 LOG_DEBUG("Recursing into: " + entryPath);
-                batchCreateLink(entryPath, newDestination, LINKED, exist_ok,
-                                ignorePattern);
+                directoryThreads.emplace_back(
+                    &linker::batchCreateLink, entryPath, newDestination,
+                    std::ref(LINKED), exist_ok, ignorePattern);
             }
+        }
+
+        for (std::thread &thread : directoryThreads) {
+            thread.join();
         }
     } catch (const fs::filesystem_error &e) {
         LOG_ERROR(e.what());
