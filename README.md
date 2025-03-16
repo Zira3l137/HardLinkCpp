@@ -13,7 +13,7 @@ files from a source directory into a destination directory.
 ## Requirements
 
 - C++17 or later.
-- Either [Meson](https://mesonbuild.com/) build system or [CMake](https://cmake.org/) build system.
+- [CMake](https://cmake.org/) build system.
 - A C++ compiler compatible with C++17.
 
 ## Building the Project
@@ -27,36 +27,25 @@ cd HardLinkCpp
 
 2. **Configure the Build Environment:**
 
-```bash
-meson setup build
-```
-
-This command sets up the build directory and configures the project using Meson.
-
-Alternatively, you can use CMake:
 
 ```bash
 cmake -S . -B build -G **YOUR_CMAKE_GENERATOR**
 ```
 
-Specify the CMake generator of your choice, e.g., `Ninja` or `Unix Makefiles` if you like.
+This command sets up the build directory and configures the project using CMake.
+Specify the CMake generator of your choice, e.g., `Ninja` or `Unix Makefiles` or `Visual Studio 17 2022` if you like.
+Run `cmake --help` for a list of available generators.
 
 3. **Build the Project:**
 
 After configuration, use the following commands to build the project:
 
 ```bash
-cd build
-meson compile
-```
-
-Or for Cmake:
-
-```bash
-cmake --build build
+cmake --build build --config <YOUR_BUILD_TYPE>
 ```
 
 These commands compile the project and place the executable in the build directory.
+You can replace `<YOUR_BUILD_TYPE>` with `Debug` or `Release` depending on your needs.
 
 ## Usage
 
