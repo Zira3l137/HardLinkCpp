@@ -11,23 +11,21 @@
 #define PATH_SEPARATOR "/"
 #endif
 
-using string = std::string;
-
-std::unordered_map<int, const argparser::Type> typeMap = {
+std::unordered_map<int, argparser::Type> typeMap = {
     {0, argparser::Type::Str},
     {1, argparser::Type::Int},
     {2, argparser::Type::Bool},
     {3, argparser::Type::Double},
 };
 
-std::unordered_map<const argparser::Type, argparser::Value> typeDefaults = {
-    {argparser::Type::Str, string("")},
+std::unordered_map<argparser::Type, argparser::Value> typeDefaults = {
+    {argparser::Type::Str, std::string("")},
     {argparser::Type::Int, 0},
     {argparser::Type::Bool, false},
     {argparser::Type::Double, 0.0},
 };
 
-bool argparser::misc::isNumber(const string &s) {
+bool argparser::misc::isNumber(const std::string &s) {
     if (s.empty())
         return false;
 
@@ -44,24 +42,24 @@ bool argparser::misc::isNumber(const string &s) {
     return (dec == std::errc());
 }
 
-string argparser::misc::toLower(string s) {
+std::string argparser::misc::toLower(std::string s) {
     std::transform(s.begin(), s.end(), s.begin(), ::tolower);
     return s;
 }
 
 argparser::ArgParser::ArgParser(int argc, char *argv[])
     : argc(argc), argv(argv) {
-    string executable(argv[0]);
+    std::string executable(argv[0]);
     this->programName =
         executable.substr(executable.find_last_of(PATH_SEPARATOR) + 1);
     this->addSwitch("--help", "-h", "Show this help message.");
 }
 
-void argparser::ArgParser::addPosArg(const string &name,
+void argparser::ArgParser::addPosArg(const std::string &name,
                                      const argparser::Value &defaultValue,
-                                     const string &desc) {
+                                     const std::string &desc) {
 
-    string normalized_name = argparser::misc::toLower(name);
+    std::string normalized_name = argparser::misc::toLower(name);
 
     if (name.empty()) {
         THROW_ERROR("Positional argument name cannot be empty.");
@@ -83,11 +81,11 @@ void argparser::ArgParser::addPosArg(const string &name,
             .get();
 }
 
-void argparser::ArgParser::addPosArg(const string &name,
+void argparser::ArgParser::addPosArg(const std::string &name,
                                      const argparser::Type &type,
-                                     const string &desc) {
+                                     const std::string &desc) {
 
-    string normalized_name = argparser::misc::toLower(name);
+    std::string normalized_name = argparser::misc::toLower(name);
 
     if (name.empty()) {
         THROW_ERROR("Positional argument name cannot be empty.");
@@ -110,13 +108,13 @@ void argparser::ArgParser::addPosArg(const string &name,
             .get();
 }
 
-void argparser::ArgParser::addOptArg(const string &longName,
-                                     const string &shortName,
+void argparser::ArgParser::addOptArg(const std::string &longName,
+                                     const std::string &shortName,
                                      const Value &defaultValue,
-                                     const string &desc) {
+                                     const std::string &desc) {
 
-    string normalized_lname = argparser::misc::toLower(longName);
-    string normalized_sname = argparser::misc::toLower(shortName);
+    std::string normalized_lname = argparser::misc::toLower(longName);
+    std::string normalized_sname = argparser::misc::toLower(shortName);
 
     if (longName.empty()) {
         THROW_ERROR("Option argument name cannot be empty.");
@@ -146,13 +144,13 @@ void argparser::ArgParser::addOptArg(const string &longName,
             .get();
 }
 
-void argparser::ArgParser::addOptArg(const string &longName,
-                                     const string &shortName,
+void argparser::ArgParser::addOptArg(const std::string &longName,
+                                     const std::string &shortName,
                                      const argparser::Type &type,
-                                     const string &desc) {
+                                     const std::string &desc) {
 
-    string normalized_lname = argparser::misc::toLower(longName);
-    string normalized_sname = argparser::misc::toLower(shortName);
+    std::string normalized_lname = argparser::misc::toLower(longName);
+    std::string normalized_sname = argparser::misc::toLower(shortName);
 
     if (longName.empty()) {
         THROW_ERROR("Option argument name cannot be empty.");
@@ -182,12 +180,12 @@ void argparser::ArgParser::addOptArg(const string &longName,
             .get();
 }
 
-void argparser::ArgParser::addSwitch(const string &longName,
-                                     const string &shortName,
-                                     const string &desc) {
+void argparser::ArgParser::addSwitch(const std::string &longName,
+                                     const std::string &shortName,
+                                     const std::string &desc) {
 
-    string normalized_lname = argparser::misc::toLower(longName);
-    string normalized_sname = argparser::misc::toLower(shortName);
+    std::string normalized_lname = argparser::misc::toLower(longName);
+    std::string normalized_sname = argparser::misc::toLower(shortName);
 
     if (longName.empty()) {
         THROW_ERROR("Option argument name cannot be empty.");
@@ -219,7 +217,7 @@ void argparser::ArgParser::addSwitch(const string &longName,
 }
 
 argparser::Value
-argparser::ArgParser::parseArgValue(const string &valueString,
+argparser::ArgParser::parseArgValue(const std::string &valueString,
                                     const argparser::Type &type) {
 
     switch (type) {
@@ -252,7 +250,7 @@ argparser::ArgParser::parseArgValue(const string &valueString,
 }
 
 argparser::Arg *argparser::ArgParser::parseArg(const int &index,
-                                               const string &argName) {
+                                               const std::string &argName) {
     auto registeredArg = this->optionals.find(argName);
 
     if (registeredArg == this->optionals.end()) {
@@ -263,7 +261,7 @@ argparser::Arg *argparser::ArgParser::parseArg(const int &index,
         THROW_ERROR("Optional argument " + argName + " requires a value.");
     }
 
-    string argValue = this->argv[index + 1];
+    std::string argValue = this->argv[index + 1];
     registeredArg->second->value =
         registeredArg->second->toggle
             ? true
@@ -278,7 +276,7 @@ argparser::ParsedArgs argparser::ArgParser::parse() {
     int posIndex = 0;
 
     for (int i = 1; i < this->argc; i++) {
-        string token = argparser::misc::toLower(this->argv[i]);
+        std::string token = argparser::misc::toLower(this->argv[i]);
 
         if (token == "--help" || token == "-h") {
             this->printHelp();
