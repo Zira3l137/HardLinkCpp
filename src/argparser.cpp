@@ -4,6 +4,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <array>
 
 #ifdef _WIN32
 #define PATH_SEPARATOR "\\"
@@ -11,11 +12,11 @@
 #define PATH_SEPARATOR "/"
 #endif
 
-std::unordered_map<int, argparser::Type> typeMap = {
-    {0, argparser::Type::Str},
-    {1, argparser::Type::Int},
-    {2, argparser::Type::Bool},
-    {3, argparser::Type::Double},
+std::array<argparser::Type, 4> typeArr = {
+    argparser::Type::Str,
+    argparser::Type::Int,
+    argparser::Type::Bool,
+    argparser::Type::Double
 };
 
 std::unordered_map<argparser::Type, argparser::Value> typeDefaults = {
@@ -72,7 +73,7 @@ void argparser::ArgParser::addPosArg(const std::string &name,
     newArg->name = normalized_name;
     newArg->desc = desc;
     newArg->value = defaultValue;
-    newArg->type = typeMap[defaultValue.index()];
+    newArg->type = typeArr.at(defaultValue.index());
 
     this->args[normalized_name] = std::move(newArg);
     this->positionals[this->positionalCounter++] =
@@ -131,7 +132,7 @@ void argparser::ArgParser::addOptArg(const std::string &longName,
     newArg->shortName = normalized_sname;
     newArg->desc = desc;
     newArg->value = defaultValue;
-    newArg->type = typeMap[defaultValue.index()];
+    newArg->type = typeArr.at(defaultValue.index());
 
     this->args[normalized_lname] = std::move(newArg);
 
