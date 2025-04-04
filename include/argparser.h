@@ -8,7 +8,6 @@
 namespace argparser {
 
 enum Type { Str, Int, Bool, Double };
-using string = std::string;
 
 inline std::ostream &operator<<(std::ostream &os, const Type &type) {
     switch (type) {
@@ -28,7 +27,7 @@ inline std::ostream &operator<<(std::ostream &os, const Type &type) {
     return os;
 }
 
-using Value = std::variant<string, int, bool, double>;
+using Value = std::variant<std::string, int, bool, double>;
 
 struct Arg {
     std::string longName;
@@ -40,8 +39,8 @@ struct Arg {
 };
 
 struct PosArg {
-    string name;
-    string desc;
+    std::string name;
+    std::string desc;
     Type type;
     Value value;
 };
@@ -51,7 +50,18 @@ using ArgPtr = std::variant<std::unique_ptr<Arg>, std::unique_ptr<PosArg>>;
 using OptLookup = std::unordered_map<std::string, Arg *>;
 using PosLookup = std::unordered_map<unsigned short, PosArg *>;
 using Args = std::unordered_map<std::string, ArgPtr>;
-using ParsedArgs = std::unordered_map<std::string, Value>;
+
+class ParsedArgValue {
+    Value value;
+
+  public:
+    ParsedArgValue() : value(std::string("")) {}
+    ParsedArgValue(const Value &v) : value(v) {}
+
+    template <typename T> operator T() const { return std::get<T>(value); }
+};
+
+using ParsedArgs = std::unordered_map<std::string, ParsedArgValue>;
 
 class ArgParser {
   public:
@@ -63,34 +73,34 @@ class ArgParser {
 
     // Positionals
 
-    void addPosArg(const string &name, const Value &defaultValue,
-                   const string &desc = "");
+    void addPosArg(const std::string &name, const Value &defaultValue,
+                   const std::string &desc = "");
 
-    void addPosArg(const string &name, const Type &type,
-                   const string &desc = "");
+    void addPosArg(const std::string &name, const Type &type,
+                   const std::string &desc = "");
 
     // Optionals
 
-    void addOptArg(const string &longName, const string &shortName,
-                   const Value &defaultValue, const string &desc = "");
+    void addOptArg(const std::string &longName, const std::string &shortName,
+                   const Value &defaultValue, const std::string &desc = "");
 
-    void addOptArg(const string &longName, const string &shortName,
-                   const Type &type, const string &desc = "");
+    void addOptArg(const std::string &longName, const std::string &shortName,
+                   const Type &type, const std::string &desc = "");
 
-    void addSwitch(const string &longName, const string &shortName,
-                   const string &desc = "");
+    void addSwitch(const std::string &longName, const std::string &shortName,
+                   const std::string &desc = "");
 
     // Setters and Getters
 
-    void setDescription(const string &description) {
+    void setDescription(const std::string &description) {
         this->description = description;
     }
-    void setProgramName(const string &programName) {
+    void setProgramName(const std::string &programName) {
         this->programName = programName;
     }
 
-    string getDescription() const { return this->description; }
-    string getProgramName() const { return this->programName; }
+    std::string getDescription() const { return this->description; }
+    std::string getProgramName() const { return this->programName; }
 
   private:
     int argc;
@@ -98,16 +108,17 @@ class ArgParser {
 
     int positionalCounter = 0;
 
-    string programName;
-    string description;
+    std::string programName;
+    std::string description;
 
     Args args;
     OptLookup optionals;
     PosLookup positionals;
 
-    Value parseArgValue(const string &valueString, const argparser::Type &type);
-    PosArg *parsePosArg(const int &index, const string &argName);
-    Arg *parseArg(const int &index, const string &argName);
+    Value parseArgValue(const std::string &valueString,
+                        const argparser::Type &type);
+    PosArg *parsePosArg(const int &index, const std::string &argName);
+    Arg *parseArg(const int &index, const std::string &argName);
 };
 
 namespace misc {
@@ -125,8 +136,8 @@ constexpr const char *RESET = "\033[0m";
 #define PRINT(message)                                                         \
     std::cout << __FILE__ << ":" << __LINE__ << ": " << message << "\n";
 
-bool isNumber(const string &s);
-string toLower(string s);
+bool isNumber(const std::string &s);
+std::string toLower(std::string s);
 
 } // namespace misc
 

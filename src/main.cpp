@@ -30,12 +30,12 @@ int main(int argc, char *argv[]) {
     std::string sourceDir, destinationDir;
     std::string ignorePattern = "";
 
-    logger::LogLevel level =
-        static_cast<logger::LogLevel>(std::get<int>(cmdArgs["debug"]));
+    int debugLevel = cmdArgs["debug"];
+    logger::LogLevel level = static_cast<logger::LogLevel>(debugLevel);
     LOGGER_SET(level);
     // LOG_WRITE_TO_FILE(true);
 
-    auto source = std::get<std::string>(cmdArgs["source"]);
+    std::string source = (cmdArgs["source"]);
     if (source != "") {
         fs::path absolutePath;
 
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
         LOG_INFO("Linking from: " + sourceDir);
     }
 
-    auto output = std::get<std::string>(cmdArgs["output"]);
+    std::string output = cmdArgs["output"];
     if (output != "") {
         fs::path absolutePath;
 
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
         LOG_INFO("To: " + destinationDir);
     }
 
-    auto ignoreKey = std::get<std::string>(cmdArgs["ignore"]);
+    std::string ignoreKey = cmdArgs["ignore"];
     if (ignoreKey != "") {
         ignorePattern = ignoreKey;
         LOG_INFO("Ignoring files matching: " + ignorePattern);

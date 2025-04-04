@@ -1,10 +1,10 @@
 #include "argparser.h"
 #include <algorithm>
+#include <array>
 #include <charconv>
 #include <memory>
 #include <unordered_map>
 #include <vector>
-#include <array>
 
 #ifdef _WIN32
 #define PATH_SEPARATOR "\\"
@@ -13,11 +13,8 @@
 #endif
 
 std::array<argparser::Type, 4> typeArr = {
-    argparser::Type::Str,
-    argparser::Type::Int,
-    argparser::Type::Bool,
-    argparser::Type::Double
-};
+    argparser::Type::Str, argparser::Type::Int, argparser::Type::Bool,
+    argparser::Type::Double};
 
 std::unordered_map<argparser::Type, argparser::Value> typeDefaults = {
     {argparser::Type::Str, std::string("")},
