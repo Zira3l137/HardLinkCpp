@@ -117,8 +117,12 @@ class ArgParser {
 
     Value parseArgValue(const std::string &valueString,
                         const argparser::Type &type);
+
     PosArg *parsePosArg(const int &index, const std::string &argName);
+
     Arg *parseArg(const int &index, const std::string &argName);
+
+    size_t estimateCapacity() const;
 };
 
 namespace misc {
@@ -127,6 +131,8 @@ constexpr const char *GREEN = "\033[32m";
 constexpr const char *RED = "\033[31m";
 constexpr const char *YELLOW = "\033[33m";
 constexpr const char *RESET = "\033[0m";
+constexpr const size_t COLOR_LEN = 8;
+constexpr const size_t RESET_LEN = 7;
 
 #define THROW_ERROR(message)                                                   \
     std::cout << argparser::misc::RED << "Error: " << argparser::misc::RESET   \

@@ -314,35 +314,47 @@ argparser::ParsedArgs argparser::ArgParser::parse() {
     return parsedArgs;
 }
 
-void argparser::ArgParser::printHelp() const {
-    std::cout << "\n"
-              << argparser::misc::GREEN << this->getProgramName()
-              << argparser::misc::RESET << "\n\n";
+size_t argparser::ArgParser::estimateCapacity() const {
+    size_t capacity = 0;
+    size_t newLineLen = 1;
+    size_t tabLen = 4;
+    size_t colorAppliedLen =
+        argparser::misc::COLOR_LEN + argparser::misc::RESET_LEN;
 
-    if (this->getDescription() != "") {
-        std::cout << this->description << "\n";
+    // Program name `\nCOLORprogramNameRESET\n\n`
+    capacity +=
+        this->getProgramName().length() + colorAppliedLen + (newLineLen * 3);
+
+    // Description `description\n`
+    capacity += this->getDescription().length() + newLineLen;
+
+    // Usage `Usage: COLORprogramName RESET`
+    capacity += this->getProgramName().length() + colorAppliedLen + 8;
+
+    // Positional arguments `COLOR<arg>RESET`
+    for (size_t i = 0; i < this->positionalCounter; i++) {
+        capacity +=
+            this->positionals.at(i)->name.length() + colorAppliedLen + 2;
     }
 
-    std::cout << "Usage: " << argparser::misc::GREEN << this->getProgramName()
-              << " " << argparser::misc::RESET;
+    // `[OPTIONS]\n`
+    capacity += 9 + newLineLen;
 
-    for (unsigned short i = 0; i < this->positionalCounter; i++) {
-        std::cout << argparser::misc::YELLOW << "<"
-                  << this->positionals.at(i)->name << "> "
-                  << argparser::misc::RESET;
+    // `\n\tPositional arguments:\n`
+    capacity += 21 + tabLen + (newLineLen * 2);
+
+    // Positional arguments `COLOR\t\tnameRESET:\n\t\t\tdescription\n`
+    for (size_t i = 0; i < this->positionalCounter; i++) {
+        capacity += this->positionals.at(i)->name.length() +
+                    this->positionals.at(i)->desc.length() + colorAppliedLen +
+                    (tabLen * 5) + (newLineLen * 2);
     }
 
-    std::cout << "[OPTIONS]\n";
-    std::cout << "\n\tPositional arguments:\n";
+    // `\tOptions:\n`
+    capacity += 8 + newLineLen + tabLen;
 
-    for (unsigned short i = 0; i < this->positionalCounter; i++) {
-        std::cout << argparser::misc::YELLOW << "\t\t"
-                  << this->positionals.at(i)->name << argparser::misc::RESET
-                  << ":\n\t\t\t" << this->positionals.at(i)->desc << "\n";
-    }
-
+    // Optional arguments `COLOR\t\tlongName, shortName:\n\t\t\tdescription\n`
     std::vector<std::string> alreadyPrinted;
-    std::cout << "\tOptions:\n";
     for (const auto &entry : this->optionals) {
 
         if (std::find(alreadyPrinted.begin(), alreadyPrinted.end(),
@@ -350,9 +362,79 @@ void argparser::ArgParser::printHelp() const {
             continue;
 
         alreadyPrinted.push_back(entry.second->longName);
-        std::cout << argparser::misc::YELLOW << "\t\t" << entry.second->longName
-                  << ", " << entry.second->shortName << argparser::misc::RESET
-                  << ":\n\t\t\t" << entry.second->desc << "\n";
+        capacity += entry.second->longName.length() +
+                    entry.second->shortName.length() +
+                    entry.second->desc.length() + colorAppliedLen +
+                    (tabLen * 5) + (newLineLen * 2) + 3;
     }
-    std::cout << "\n";
+    capacity += newLineLen;
+
+    return capacity;
+}
+
+void argparser::ArgParser::printHelp() const {
+    std::string message;
+    size_t capacity = this->estimateCapacity();
+    message.reserve(capacity);
+
+    message += "\n";
+    message += argparser::misc::GREEN;
+    message += this->getProgramName();
+    message += argparser::misc::RESET;
+    message += "\n\n";
+
+    if (this->getDescription() != "") {
+        message += this->description;
+        message += "\n";
+    }
+
+    message += "Usage: ";
+    message += argparser::misc::GREEN;
+    message += this->getProgramName();
+    message += " ";
+    message += argparser::misc::RESET;
+
+    for (unsigned short i = 0; i < this->positionalCounter; i++) {
+        message += argparser::misc::YELLOW;
+        message += "<";
+        message += this->positionals.at(i)->name;
+        message += "> ";
+        message += argparser::misc::RESET;
+    }
+
+    message += "[OPTIONS]\n";
+    message += "\n\tPositional arguments:\n";
+
+    for (unsigned short i = 0; i < this->positionalCounter; i++) {
+        message += argparser::misc::YELLOW;
+        message += "\t\t";
+        message += this->positionals.at(i)->name;
+        message += argparser::misc::RESET;
+        message += ":\n\t\t\t";
+        message += this->positionals.at(i)->desc;
+        message += "\n";
+    }
+
+    std::vector<std::string> alreadyPrinted;
+    message += "\tOptions:\n";
+    for (const auto &entry : this->optionals) {
+
+        if (std::find(alreadyPrinted.begin(), alreadyPrinted.end(),
+                      entry.second->longName) != alreadyPrinted.end())
+            continue;
+
+        alreadyPrinted.push_back(entry.second->longName);
+        message += argparser::misc::YELLOW;
+        message += "\t\t";
+        message += entry.second->longName;
+        message += ", ";
+        message += entry.second->shortName;
+        message += argparser::misc::RESET;
+        message += ":\n\t\t\t";
+        message += entry.second->desc;
+        message += "\n";
+    }
+    message += "\n";
+
+    std::cout << message;
 }
