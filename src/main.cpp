@@ -27,59 +27,50 @@ int main(int argc, char *argv[]) {
 
     auto cmdArgs = parser.parse();
 
-    std::string sourceDir, destinationDir;
-    std::string ignorePattern = "";
-
     int debugLevel = cmdArgs["debug"];
+    std::string source = cmdArgs["source"];
+    std::string output = cmdArgs["output"];
+    std::string ignoreKey = cmdArgs["ignore"];
+
     logger::LogLevel level = static_cast<logger::LogLevel>(debugLevel);
     LOGGER_SET(level);
     // LOG_WRITE_TO_FILE(true);
 
-    std::string source = (cmdArgs["source"]);
     if (source != "") {
-        fs::path absolutePath;
-
         try {
-            absolutePath = fs::absolute(source);
+            source = fs::absolute(source).string();
         } catch (fs::filesystem_error &e) {
             LOG_ERROR("Invalid source directory: " + source);
             parser.printHelp();
             return 1;
         }
 
-        sourceDir = absolutePath.string();
-        LOG_INFO("Linking from: " + sourceDir);
+        LOG_INFO("Linking from: " + source);
     }
 
-    std::string output = cmdArgs["output"];
     if (output != "") {
-        fs::path absolutePath;
-
         try {
-            absolutePath = fs::absolute(output);
+            output = fs::absolute(output).string();
         } catch (fs::filesystem_error &e) {
             LOG_ERROR("Invalid output directory: " + output);
             parser.printHelp();
             return 1;
         }
 
-        destinationDir = absolutePath.string();
-        LOG_INFO("To: " + destinationDir);
+        LOG_INFO("To: " + output);
     }
 
-    std::string ignoreKey = cmdArgs["ignore"];
     if (ignoreKey != "") {
-        ignorePattern = ignoreKey;
-        LOG_INFO("Ignoring files matching: " + ignorePattern);
+        LOG_INFO("Ignoring files matching: " + ignoreKey);
     }
 
-    if (sourceDir != "" && destinationDir != "") {
-        if (!fs::is_directory(sourceDir)) {
+    if (source != "" && output != "") {
+        if (!fs::is_directory(source)) {
             LOG_DEBUG("Source is not a directory, linking a single file...");
-            linker::createLink(sourceDir, destinationDir);
+            linker::createLink(source, output);
         } else {
             LOG_DEBUG("Source is a directory, batch linking...");
-            linker::linkFiles(sourceDir, destinationDir, false, ignorePattern);
+            linker::linkFiles(source, output, false, ignoreKey);
         }
     } else {
         LOG_ERROR("Source or destination not specified");

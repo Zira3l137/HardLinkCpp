@@ -238,7 +238,8 @@ argparser::ArgParser::parseArgValue(const std::string &valueString,
 
     case argparser::Type::Double:
         if (!argparser::misc::isNumber(valueString)) {
-            THROW_ERROR("Value " + valueString + " is not an integer.");
+            THROW_ERROR("Value " + valueString +
+                        " is not a floating point number.");
         }
         return std::stod(valueString);
 
